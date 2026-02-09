@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'package:rotnot/services/auth_service.dart';
 
 class Home extends StatelessWidget {
   const Home({super.key});
@@ -12,7 +13,8 @@ class Home extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const String username = "Alex";
+    final user = AuthService.currentUser;
+    final username = user?.displayName?.split(' ').first ?? 'User';
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -23,18 +25,15 @@ class Home extends StatelessWidget {
             // --- 0. TOP NAVIGATION ROW ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildMenuButton(context),
-                _buildNotificationBell(),
-              ],
+              children: [_buildMenuButton(context), _buildNotificationBell()],
             ),
 
             const SizedBox(height: 25),
 
             // --- 1. PERSONALIZED GREETING HEADER ---
-            const Text(
+            Text(
               "Hey, $username",
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
                 letterSpacing: -0.5,
@@ -56,9 +55,24 @@ class Home extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildStatusRing("Total Items", "8", accentGreen, Icons.inventory_2_outlined),
-                _buildStatusRing("Expiring Soon", "6", accentOrange, Icons.warning_amber_rounded),
-                _buildStatusRing("Expired", "1", accentRed, Icons.timer_off_outlined),
+                _buildStatusRing(
+                  "Total Items",
+                  "8",
+                  accentGreen,
+                  Icons.inventory_2_outlined,
+                ),
+                _buildStatusRing(
+                  "Expiring Soon",
+                  "6",
+                  accentOrange,
+                  Icons.warning_amber_rounded,
+                ),
+                _buildStatusRing(
+                  "Expired",
+                  "1",
+                  accentRed,
+                  Icons.timer_off_outlined,
+                ),
               ],
             ),
 
@@ -110,7 +124,11 @@ class Home extends StatelessWidget {
                   color: accentGreen,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.auto_graph_rounded, color: Colors.white, size: 20),
+                child: const Icon(
+                  Icons.auto_graph_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               const Text(
@@ -122,9 +140,19 @@ class Home extends StatelessWidget {
           const SizedBox(height: 25),
           Row(
             children: [
-              _buildImpactStat("MONEY SAVED", "रू 1,420", "+12% this week", accentGreen),
+              _buildImpactStat(
+                "MONEY SAVED",
+                "रू 1,420",
+                "+12% this week",
+                accentGreen,
+              ),
               const SizedBox(width: 15),
-              _buildImpactStat("CO2 AVOIDED", "18.4 kg", "Total reduction", const Color(0xFF64FFDA)),
+              _buildImpactStat(
+                "CO2 AVOIDED",
+                "18.4 kg",
+                "Total reduction",
+                const Color(0xFF64FFDA),
+              ),
             ],
           ),
         ],
@@ -152,7 +180,9 @@ class Home extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               image: const DecorationImage(
                 // Replace with actual NetworkImage later
-                image: NetworkImage('https://images.unsplash.com/photo-1473093226795-af9932fe5856?auto=format&fit=crop&w=200&q=80'),
+                image: NetworkImage(
+                  'https://images.unsplash.com/photo-1473093226795-af9932fe5856?auto=format&fit=crop&w=200&q=80',
+                ),
                 fit: BoxFit.cover,
               ),
             ),
@@ -170,7 +200,11 @@ class Home extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   "Use your expiring tomatoes!",
-                  style: TextStyle(color: accentOrange.withOpacity(0.8), fontSize: 12, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    color: accentOrange.withOpacity(0.8),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 ElevatedButton(
@@ -182,10 +216,15 @@ class Home extends StatelessWidget {
                     foregroundColor: Colors.white,
                     minimumSize: const Size(100, 36),
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                     elevation: 0,
                   ),
-                  child: const Text("View Recipe", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    "View Recipe",
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
@@ -221,12 +260,21 @@ class Home extends StatelessWidget {
       child: const Badge(
         label: Text("3"),
         backgroundColor: accentRed,
-        child: Icon(Icons.notifications_none_rounded, color: Colors.white, size: 26),
+        child: Icon(
+          Icons.notifications_none_rounded,
+          color: Colors.white,
+          size: 26,
+        ),
       ),
     );
   }
 
-  Widget _buildStatusRing(String label, String value, Color color, IconData icon) {
+  Widget _buildStatusRing(
+    String label,
+    String value,
+    Color color,
+    IconData icon,
+  ) {
     return Container(
       width: 105,
       padding: const EdgeInsets.symmetric(vertical: 20),
@@ -243,25 +291,45 @@ class Home extends StatelessWidget {
               SizedBox(
                 width: 62,
                 height: 62,
-                child: CustomPaint(painter: RingPainter(progress: 0.75, color: color)),
+                child: CustomPaint(
+                  painter: RingPainter(progress: 0.75, color: color),
+                ),
               ),
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(icon, size: 14, color: Colors.white38),
-                  Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
-              )
+              ),
             ],
           ),
           const SizedBox(height: 12),
-          Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildImpactStat(String label, String value, String subValue, Color color) {
+  Widget _buildImpactStat(
+    String label,
+    String value,
+    String subValue,
+    Color color,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -272,11 +340,29 @@ class Home extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white38,
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
+            ),
             const SizedBox(height: 8),
-            Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(subValue, style: TextStyle(color: color.withOpacity(0.5), fontSize: 10)),
+            Text(
+              subValue,
+              style: TextStyle(color: color.withOpacity(0.5), fontSize: 10),
+            ),
           ],
         ),
       ),
@@ -292,11 +378,26 @@ class RingPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
-    final bgPaint = Paint()..color = Colors.white.withOpacity(0.03)..style = PaintingStyle.stroke..strokeWidth = 5;
-    final progressPaint = Paint()..color = color..style = PaintingStyle.stroke..strokeCap = StrokeCap.round..strokeWidth = 5..maskFilter = const MaskFilter.blur(BlurStyle.solid, 3);
+    final bgPaint = Paint()
+      ..color = Colors.white.withOpacity(0.03)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5;
+    final progressPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = 5
+      ..maskFilter = const MaskFilter.blur(BlurStyle.solid, 3);
     canvas.drawCircle(center, radius, bgPaint);
-    canvas.drawArc(Rect.fromCircle(center: center, radius: radius), -math.pi / 2, 2 * math.pi * progress, false, progressPaint);
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -math.pi / 2,
+      2 * math.pi * progress,
+      false,
+      progressPaint,
+    );
   }
+
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
