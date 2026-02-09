@@ -49,3 +49,6 @@ build/
 # OS files
 .DS_Store
 Thumbs.db
+
+# backend
+/backend/node_modules
