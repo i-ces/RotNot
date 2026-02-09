@@ -44,12 +44,31 @@ npm run build
 # Run production build
 npm start
 
+# Seed database with sample data (⚠️ clears existing data!)
+npm run seed
+
+# Seed database in production
+npm run seed:prod
+
 # Lint code
 npm run lint
 
 # Format code
 npm run format
 ```
+
+### Database Seeding
+
+The project includes a seed script to populate your database with sample data for testing and development.
+
+**⚠️ Warning**: The seed script will delete all existing data before inserting sample data!
+
+```bash
+# Seed the database
+npm run seed
+```
+
+For more details, see [SEEDING.md](./SEEDING.md)
 
 ## Project Structure
 
@@ -62,6 +81,7 @@ backend/
 │   ├── routes/          # API routes
 │   ├── middlewares/     # Custom middleware
 │   ├── services/        # Business logic
+│   ├── scripts/         # Database seeding & utilities
 │   ├── utils/           # Utility functions
 │   ├── types/           # TypeScript types/interfaces
 │   ├── app.ts           # Express app setup
@@ -69,6 +89,7 @@ backend/
 ├── dist/                # Compiled JavaScript (generated)
 ├── .env                 # Environment variables (git-ignored)
 ├── .env.example         # Environment variables template
+├── SEEDING.md           # Database seeding guide
 ├── tsconfig.json        # TypeScript configuration
 ├── nodemon.json         # Nodemon configuration
 ├── .eslintrc.json       # ESLint configuration
@@ -86,6 +107,8 @@ backend/
 - `npm run dev` - Start development server with hot reload
 - `npm run build` - Build TypeScript to JavaScript
 - `npm start` - Run production build
+- `npm run seed` - Seed database with sample data (⚠️ clears existing data!)
+- `npm run seed:prod` - Seed database in production mode
 - `npm run lint` - Lint code with ESLint
 - `npm run format` - Format code with Prettier
 

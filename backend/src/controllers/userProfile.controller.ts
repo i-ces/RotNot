@@ -20,11 +20,11 @@ export const createOrUpdateProfile = async (
       throw new AppError('User not authenticated', 401);
     }
 
-    const { role, name, phone } = req.body;
+    const { role, name, phone, email } = req.body;
 
     // Validate required fields
-    if (!role || !name || !phone) {
-      throw new AppError('Role, name, and phone are required', 400);
+    if (!role || !name) {
+      throw new AppError('Role and name are required', 400);
     }
 
     // Validate role enum
@@ -42,7 +42,8 @@ export const createOrUpdateProfile = async (
       // Update existing profile
       userProfile.role = role;
       userProfile.name = name;
-      userProfile.phone = phone;
+      if (phone !== undefined) userProfile.phone = phone;
+      if (email !== undefined) userProfile.email = email;
       await userProfile.save();
     } else {
       // Create new profile
@@ -51,6 +52,7 @@ export const createOrUpdateProfile = async (
         role,
         name,
         phone,
+        email,
       });
     }
 
@@ -63,6 +65,7 @@ export const createOrUpdateProfile = async (
           firebaseUid: userProfile.firebaseUid,
           role: userProfile.role,
           name: userProfile.name,
+          email: userProfile.email,
           phone: userProfile.phone,
           createdAt: userProfile.createdAt,
         },
@@ -107,6 +110,7 @@ export const getMyProfile = async (
           firebaseUid: userProfile.firebaseUid,
           role: userProfile.role,
           name: userProfile.name,
+          email: userProfile.email,
           phone: userProfile.phone,
           createdAt: userProfile.createdAt,
         },

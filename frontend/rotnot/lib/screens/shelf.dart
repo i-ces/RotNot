@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../main.dart';
+import '../services/api_service.dart';
 
 // ─── Data model ───────────────────────────────────────────────────────────────
 
@@ -64,98 +65,6 @@ class FoodItem {
   }
 }
 
-// ─── Sample data ──────────────────────────────────────────────────────────────
-
-List<FoodItem> _sampleItems() {
-  final now = DateTime.now();
-  return [
-    FoodItem(
-      id: '1',
-      name: 'Milk',
-      addedDate: now.subtract(const Duration(days: 3)),
-      expiryDate: now.add(const Duration(days: 1)),
-      quantity: 1,
-      unit: 'litre',
-      notes: 'Full cream milk',
-    ),
-    FoodItem(
-      id: '2',
-      name: 'Apples',
-      addedDate: now.subtract(const Duration(days: 5)),
-      expiryDate: now.add(const Duration(days: 10)),
-      quantity: 6,
-      unit: 'pcs',
-    ),
-    FoodItem(
-      id: '3',
-      name: 'Chicken Breast',
-      addedDate: now.subtract(const Duration(days: 2)),
-      expiryDate: now.subtract(const Duration(days: 1)),
-      quantity: 500,
-      unit: 'grams',
-      notes: 'Needs to be cooked or discarded',
-    ),
-    FoodItem(
-      id: '4',
-      name: 'Bread',
-      addedDate: now.subtract(const Duration(days: 4)),
-      expiryDate: now.add(const Duration(days: 2)),
-      quantity: 1,
-      unit: 'loaf',
-    ),
-    FoodItem(
-      id: '5',
-      name: 'Spinach',
-      addedDate: now.subtract(const Duration(days: 1)),
-      expiryDate: now.add(const Duration(days: 7)),
-      quantity: 250,
-      unit: 'grams',
-    ),
-    FoodItem(
-      id: '6',
-      name: 'Yogurt',
-      addedDate: now.subtract(const Duration(days: 6)),
-      expiryDate: now.subtract(const Duration(days: 2)),
-      quantity: 2,
-      unit: 'cups',
-      notes: 'Greek yogurt — expired',
-    ),
-    FoodItem(
-      id: '7',
-      name: 'Eggs',
-      addedDate: now.subtract(const Duration(days: 2)),
-      expiryDate: now.add(const Duration(days: 14)),
-      quantity: 12,
-      unit: 'pcs',
-    ),
-    FoodItem(
-      id: '8',
-      name: 'Rice',
-      addedDate: now.subtract(const Duration(days: 10)),
-      expiryDate: now.add(const Duration(days: 180)),
-      quantity: 5,
-      unit: 'kg',
-    ),
-    FoodItem(
-      id: '9',
-      name: 'Tomatoes',
-      addedDate: now.subtract(const Duration(days: 3)),
-      expiryDate: now.add(const Duration(days: 3)),
-      quantity: 4,
-      unit: 'pcs',
-      notes: 'Use soon for pasta sauce',
-    ),
-    FoodItem(
-      id: '10',
-      name: 'Cheddar Cheese',
-      addedDate: now.subtract(const Duration(days: 7)),
-      expiryDate: now.subtract(const Duration(days: 0)),
-      quantity: 200,
-      unit: 'grams',
-    ),
-  ];
-}
-
 // ─── Shelf Screen ─────────────────────────────────────────────────────────────
 
 class ShelfScreen extends StatefulWidget {
@@ -171,7 +80,9 @@ class ShelfScreen extends StatefulWidget {
 class _ShelfScreenState extends State<ShelfScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  late List<FoodItem> _items;
+  List<FoodItem> _items = [];
+  bool _isLoading = true;
+  String? _error;
   String _searchQuery = '';
   final FocusNode _searchFocusNode = FocusNode();
 
@@ -179,12 +90,47 @@ class _ShelfScreenState extends State<ShelfScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _items = _sampleItems();
+    _loadFoodItems();
 
     // Listen to focus changes to hide/show FAB in main.dart
     _searchFocusNode.addListener(() {
       widget.onSearchToggle(_searchFocusNode.hasFocus);
     });
+  }
+
+  Future<void> _loadFoodItems() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final items = await ApiService.getFoodItems();
+      setState(() {
+        _items = items.map((item) {
+          return FoodItem(
+            id: item['_id'] ?? '',
+            name: item['name'] ?? '',
+            addedDate: item['addedAt'] != null
+                ? DateTime.parse(item['addedAt'])
+                : DateTime.now(),
+            expiryDate: item['expiryDate'] != null
+                ? DateTime.parse(item['expiryDate'])
+                : DateTime.now(),
+            quantity: item['quantity'] ?? 1,
+            unit: item['unit'] ?? 'pcs',
+            notes: item['notes'],
+          );
+        }).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+      print('Error loading food items: $e');
+    }
   }
 
   @override
@@ -199,18 +145,18 @@ class _ShelfScreenState extends State<ShelfScreen>
   List<FoodItem> _applySearch(List<FoodItem> list) {
     if (_searchQuery.isEmpty) return list;
     final q = _searchQuery.toLowerCase();
-    return list
-        .where((i) => i.name.toLowerCase().contains(q))
-        .toList();
+    return list.where((i) => i.name.toLowerCase().contains(q)).toList();
   }
 
   List<FoodItem> get _allItems => _applySearch(_items);
   List<FoodItem> get _freshItems =>
       _applySearch(_items.where((i) => i.status == FoodStatus.fresh).toList());
   List<FoodItem> get _expiringItems => _applySearch(
-      _items.where((i) => i.status == FoodStatus.expiring).toList());
+    _items.where((i) => i.status == FoodStatus.expiring).toList(),
+  );
   List<FoodItem> get _expiredItems => _applySearch(
-      _items.where((i) => i.status == FoodStatus.expired).toList());
+    _items.where((i) => i.status == FoodStatus.expired).toList(),
+  );
 
   // Summary counts ────────────────────────────────────────────────────────────
 
@@ -223,26 +169,114 @@ class _ShelfScreenState extends State<ShelfScreen>
 
   // ──────────────────────────────────────────────────────────────────────────
 
-  void _deleteItem(String id) {
-    setState(() => _items.removeWhere((i) => i.id == id));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Item removed'),
-        backgroundColor: MyApp.surfaceColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
+  void _deleteItem(String id) async {
+    try {
+      await ApiService.deleteFoodItem(id);
+      setState(() => _items.removeWhere((i) => i.id == id));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Item removed'),
+            backgroundColor: MyApp.surfaceColor,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete item: $e'),
+            backgroundColor: MyApp.accentRed,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
-  void _addItem(FoodItem item) {
-    setState(() => _items.add(item));
+  void _addItem(FoodItem item) async {
+    try {
+      final foodData = {
+        'name': item.name,
+        'category': 'General', // Default category
+        'quantity': item.quantity,
+        'unit': item.unit,
+        'expiryDate': item.expiryDate.toIso8601String(),
+        if (item.notes != null) 'notes': item.notes,
+      };
+
+      await ApiService.createFoodItem(foodData);
+      await _loadFoodItems(); // Reload to get the server-generated ID
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Item added successfully'),
+            backgroundColor: MyApp.accentGreen,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Add item error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to add item: ${e.toString().replaceAll('Exception: ', '')}',
+            ),
+            backgroundColor: MyApp.accentRed,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   // ──────────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: MyApp.accentGreen),
+      );
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: MyApp.accentRed),
+            const SizedBox(height: 16),
+            Text(
+              'Failed to load items',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadFoodItems,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: MyApp.accentGreen,
+              ),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Column(
       children: [
         // ── Search bar (With SafeArea and increased padding) ──
@@ -257,8 +291,10 @@ class _ShelfScreenState extends State<ShelfScreen>
               decoration: InputDecoration(
                 hintText: 'Search items…',
                 hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-                prefixIcon:
-                    Icon(Icons.search_rounded, color: Colors.white.withOpacity(0.4)),
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  color: Colors.white.withOpacity(0.4),
+                ),
                 filled: true,
                 fillColor: MyApp.surfaceColor,
                 contentPadding: const EdgeInsets.symmetric(vertical: 0),
@@ -290,8 +326,10 @@ class _ShelfScreenState extends State<ShelfScreen>
             dividerColor: Colors.transparent,
             labelColor: MyApp.accentGreen,
             unselectedLabelColor: Colors.white54,
-            labelStyle:
-                const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            labelStyle: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
             tabs: [
               _buildTab('All', _items.length),
               _buildTab('Fresh', _freshCount),
@@ -324,13 +362,16 @@ class _ShelfScreenState extends State<ShelfScreen>
               child: ElevatedButton.icon(
                 onPressed: () => _showAddItemSheet(context),
                 icon: const Icon(Icons.add_rounded, size: 22),
-                label: const Text('Add Item',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                label: const Text(
+                  'Add Item',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: MyApp.accentGreen,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   elevation: 0,
                 ),
               ),
@@ -357,8 +398,13 @@ class _ShelfScreenState extends State<ShelfScreen>
                 color: Colors.white.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text('$count',
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
+              child: Text(
+                '$count',
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
           ],
         ),
@@ -370,28 +416,58 @@ class _ShelfScreenState extends State<ShelfScreen>
 
   Widget _buildItemList(List<FoodItem> items) {
     if (items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      return RefreshIndicator(
+        onRefresh: _loadFoodItems,
+        color: MyApp.accentGreen,
+        child: ListView(
           children: [
-            Icon(Icons.inventory_2_outlined,
-                size: 56, color: Colors.white.withOpacity(0.15)),
-            const SizedBox(height: 12),
-            Text('No items found',
-                style: TextStyle(
-                    color: Colors.white.withOpacity(0.3), fontSize: 16)),
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.5,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.inventory_2_outlined,
+                      size: 56,
+                      color: Colors.white.withOpacity(0.15),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No items found',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.3),
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Pull down to refresh',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.2),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-      itemCount: items.length,
-      itemBuilder: (context, index) => _FoodItemCard(
-        item: items[index],
-        onDelete: () => _deleteItem(items[index].id),
-        onTap: () => _showItemDetail(items[index]),
+    return RefreshIndicator(
+      onRefresh: _loadFoodItems,
+      color: MyApp.accentGreen,
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+        itemCount: items.length,
+        itemBuilder: (context, index) => _FoodItemCard(
+          item: items[index],
+          onDelete: () => _deleteItem(items[index].id),
+          onTap: () => _showItemDetail(items[index]),
+        ),
       ),
     );
   }
@@ -448,24 +524,35 @@ class _ShelfScreenState extends State<ShelfScreen>
                         ),
                       ),
                     ),
-                    const Text('Add Food Item',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Add Food Item',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 20),
                     _sheetTextField(nameCtrl, 'Item name', Icons.label_rounded),
                     const SizedBox(height: 14),
                     Row(
                       children: [
                         Expanded(
-                            child: _sheetTextField(
-                                qtyCtrl, 'Qty', Icons.numbers_rounded,
-                                isNumber: true)),
+                          child: _sheetTextField(
+                            qtyCtrl,
+                            'Qty',
+                            Icons.numbers_rounded,
+                            isNumber: true,
+                          ),
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
-                            child: _sheetTextField(
-                                unitCtrl, 'Unit', Icons.straighten_rounded)),
+                          child: _sheetTextField(
+                            unitCtrl,
+                            'Unit',
+                            Icons.straighten_rounded,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 14),
@@ -475,8 +562,9 @@ class _ShelfScreenState extends State<ShelfScreen>
                           context: context,
                           initialDate: expiryDate,
                           firstDate: DateTime.now(),
-                          lastDate:
-                              DateTime.now().add(const Duration(days: 730)),
+                          lastDate: DateTime.now().add(
+                            const Duration(days: 730),
+                          ),
                           builder: (ctx, child) {
                             return Theme(
                               data: ThemeData.dark().copyWith(
@@ -495,30 +583,41 @@ class _ShelfScreenState extends State<ShelfScreen>
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 16),
+                          horizontal: 14,
+                          vertical: 16,
+                        ),
                         decoration: BoxDecoration(
                           color: MyApp.scaffoldBg,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.calendar_today_rounded,
-                                color: Colors.white54, size: 20),
+                            const Icon(
+                              Icons.calendar_today_rounded,
+                              color: Colors.white54,
+                              size: 20,
+                            ),
                             const SizedBox(width: 12),
                             Text(
                               'Expires: ${_formatDate(expiryDate)}',
                               style: const TextStyle(color: Colors.white),
                             ),
                             const Spacer(),
-                            const Icon(Icons.edit_rounded,
-                                color: Colors.white24, size: 18),
+                            const Icon(
+                              Icons.edit_rounded,
+                              color: Colors.white24,
+                              size: 18,
+                            ),
                           ],
                         ),
                       ),
                     ),
                     const SizedBox(height: 14),
                     _sheetTextField(
-                        notesCtrl, 'Notes (optional)', Icons.notes_rounded),
+                      notesCtrl,
+                      'Notes (optional)',
+                      Icons.notes_rounded,
+                    ),
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
@@ -527,14 +626,12 @@ class _ShelfScreenState extends State<ShelfScreen>
                         onPressed: () {
                           if (nameCtrl.text.trim().isEmpty) return;
                           final newItem = FoodItem(
-                            id: DateTime.now()
-                                .millisecondsSinceEpoch
+                            id: DateTime.now().millisecondsSinceEpoch
                                 .toString(),
                             name: nameCtrl.text.trim(),
                             addedDate: DateTime.now(),
                             expiryDate: expiryDate,
-                            quantity:
-                                int.tryParse(qtyCtrl.text.trim()) ?? 1,
+                            quantity: int.tryParse(qtyCtrl.text.trim()) ?? 1,
                             unit: unitCtrl.text.trim().isEmpty
                                 ? 'pcs'
                                 : unitCtrl.text.trim(),
@@ -549,12 +646,17 @@ class _ShelfScreenState extends State<ShelfScreen>
                           backgroundColor: MyApp.accentGreen,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                           elevation: 0,
                         ),
-                        child: const Text('Save Item',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w600)),
+                        child: const Text(
+                          'Save Item',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -568,8 +670,11 @@ class _ShelfScreenState extends State<ShelfScreen>
   }
 
   Widget _sheetTextField(
-      TextEditingController ctrl, String hint, IconData icon,
-      {bool isNumber = false}) {
+    TextEditingController ctrl,
+    String hint,
+    IconData icon, {
+    bool isNumber = false,
+  }) {
     return TextField(
       controller: ctrl,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
@@ -624,7 +729,11 @@ class _FoodItemCard extends StatelessWidget {
                 color: item.statusColor.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(Icons.fastfood_rounded, color: item.statusColor, size: 24),
+              child: Icon(
+                Icons.fastfood_rounded,
+                color: item.statusColor,
+                size: 24,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -634,11 +743,14 @@ class _FoodItemCard extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(item.name,
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600)),
+                        child: Text(
+                          item.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                       _statusChip(item),
                     ],
@@ -646,34 +758,49 @@ class _FoodItemCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.inventory_2_outlined,
-                          size: 13, color: Colors.white.withOpacity(0.35)),
+                      Icon(
+                        Icons.inventory_2_outlined,
+                        size: 13,
+                        color: Colors.white.withOpacity(0.35),
+                      ),
                       const SizedBox(width: 4),
-                      Text('${item.quantity} ${item.unit}',
-                          style: TextStyle(
-                              color: Colors.white.withOpacity(0.5),
-                              fontSize: 12)),
+                      Text(
+                        '${item.quantity} ${item.unit}',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.5),
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.schedule_rounded,
-                          size: 13, color: item.statusColor.withOpacity(0.7)),
+                      Icon(
+                        Icons.schedule_rounded,
+                        size: 13,
+                        color: item.statusColor.withOpacity(0.7),
+                      ),
                       const SizedBox(width: 4),
-                      Text(item.daysLeftLabel,
-                          style: TextStyle(
-                              color: item.statusColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500)),
+                      Text(
+                        item.daysLeftLabel,
+                        style: TextStyle(
+                          color: item.statusColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
             IconButton(
-              icon: Icon(Icons.delete_outline_rounded,
-                  color: Colors.white.withOpacity(0.25), size: 20),
+              icon: Icon(
+                Icons.delete_outline_rounded,
+                color: Colors.white.withOpacity(0.25),
+                size: 20,
+              ),
               onPressed: onDelete,
               splashRadius: 20,
             ),
@@ -693,7 +820,10 @@ class _FoodItemCard extends StatelessWidget {
       child: Text(
         item.statusLabel,
         style: TextStyle(
-            color: item.statusColor, fontSize: 11, fontWeight: FontWeight.w600),
+          color: item.statusColor,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -732,14 +862,21 @@ class _ItemDetailSheet extends StatelessWidget {
               color: item.statusColor.withOpacity(0.12),
               borderRadius: BorderRadius.circular(18),
             ),
-            child: Icon(Icons.fastfood_rounded, color: item.statusColor, size: 32),
+            child: Icon(
+              Icons.fastfood_rounded,
+              color: item.statusColor,
+              size: 32,
+            ),
           ),
           const SizedBox(height: 14),
-          Text(item.name,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold)),
+          Text(
+            item.name,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
@@ -747,19 +884,31 @@ class _ItemDetailSheet extends StatelessWidget {
               color: item.statusColor.withOpacity(0.15),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Text(item.statusLabel,
-                style: TextStyle(
-                    color: item.statusColor,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600)),
+            child: Text(
+              item.statusLabel,
+              style: TextStyle(
+                color: item.statusColor,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
           const SizedBox(height: 24),
-          _detailRow(Icons.inventory_2_outlined, 'Quantity',
-              '${item.quantity} ${item.unit}'),
-          _detailRow(Icons.calendar_today_rounded, 'Added on',
-              _formatDate(item.addedDate)),
-          _detailRow(Icons.event_rounded, 'Expires on',
-              _formatDate(item.expiryDate)),
+          _detailRow(
+            Icons.inventory_2_outlined,
+            'Quantity',
+            '${item.quantity} ${item.unit}',
+          ),
+          _detailRow(
+            Icons.calendar_today_rounded,
+            'Added on',
+            _formatDate(item.addedDate),
+          ),
+          _detailRow(
+            Icons.event_rounded,
+            'Expires on',
+            _formatDate(item.expiryDate),
+          ),
           _detailRow(Icons.schedule_rounded, 'Time left', item.daysLeftLabel),
           if (item.notes != null)
             _detailRow(Icons.notes_rounded, 'Notes', item.notes!),
@@ -775,17 +924,24 @@ class _ItemDetailSheet extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: Colors.white38),
           const SizedBox(width: 12),
-          Text('$label:',
-              style: TextStyle(
-                  color: Colors.white.withOpacity(0.5), fontSize: 14)),
+          Text(
+            '$label:',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.5),
+              fontSize: 14,
+            ),
+          ),
           const Spacer(),
           Flexible(
-            child: Text(value,
-                textAlign: TextAlign.end,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500)),
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),
@@ -797,8 +953,18 @@ class _ItemDetailSheet extends StatelessWidget {
 
 String _formatDate(DateTime d) {
   const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
   return '${d.day} ${months[d.month - 1]} ${d.year}';
 }

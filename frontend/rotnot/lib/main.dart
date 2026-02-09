@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -19,8 +20,10 @@ import 'screens/smartrecipe.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Android reads Firebase config from google-services.json automatically
-  await Firebase.initializeApp();
+  // Firebase is not supported on Linux/Windows/macOS desktop
+  if (!Platform.isLinux && !Platform.isWindows && !Platform.isMacOS) {
+    await Firebase.initializeApp();
+  }
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -37,6 +40,7 @@ class MyApp extends StatelessWidget {
   static const Color scaffoldBg = Color(0xFF121212);
   static const Color surfaceColor = Color(0xFF1E1E1E);
   static const Color accentGreen = Color(0xFF2ECC71);
+  static const Color accentRed = Color(0xFFE74C3C);
   static const Color appBarColor = Color(0xFF1A1A1A);
 
   @override
@@ -61,12 +65,16 @@ class MyApp extends StatelessWidget {
   }
 }
 
-/// Listens to FirebaseAuth state and routes accordingly
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Firebase not available on desktop — skip auth
+    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      return const HomeScreen();
+    }
+
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
@@ -121,25 +129,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       key: _scaffoldKey,
       drawer: _buildSidebar(context),
+      // FIX: Removed the Stack and Positioned IconButton that was overlapping content.
+      // The body now only contains the IndexedStack.
       body: SafeArea(
-        child: Stack(
-          children: [
-            IndexedStack(index: _selectedIndex, children: _pages),
-            if (!_isSearchActive)
-              Positioned(
-                top: 10,
-                left: 10,
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.menu_rounded,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                  onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                ),
-              ),
-          ],
-        ),
+        child: IndexedStack(index: _selectedIndex, children: _pages),
       ),
       bottomNavigationBar: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -176,6 +169,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSidebar(BuildContext context) {
+    final user = AuthService.currentUser;
+    final displayName = user?.displayName ?? 'User';
+    final email = user?.email ?? 'No email';
+
     return Drawer(
       backgroundColor: MyApp.scaffoldBg,
       child: Column(
@@ -186,13 +183,13 @@ class _HomeScreenState extends State<HomeScreen> {
               backgroundColor: MyApp.accentGreen,
               child: Icon(Icons.person, color: Colors.white, size: 40),
             ),
-            accountName: const Text(
-              "Alex Johnson",
-              style: TextStyle(fontWeight: FontWeight.bold),
+            accountName: Text(
+              displayName,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            accountEmail: const Text(
-              "alex.j@example.com",
-              style: TextStyle(color: Colors.white70),
+            accountEmail: Text(
+              email,
+              style: const TextStyle(color: Colors.white70),
             ),
           ),
           Expanded(

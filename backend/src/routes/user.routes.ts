@@ -12,10 +12,11 @@ const router = Router();
  * All routes require Firebase authentication
  */
 
+// Get current user's profile
+router.get('/profile', verifyFirebaseToken, getMyProfile);
+
 // Create or update user profile
 router.post('/profile', verifyFirebaseToken, createOrUpdateProfile);
-
-// Get current user's profile
-router.get('/profile/me', verifyFirebaseToken, getMyProfile);
+router.put('/profile', verifyFirebaseToken, createOrUpdateProfile);
 
 export default router;

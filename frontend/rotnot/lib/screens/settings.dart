@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rotnot/services/auth_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -17,9 +18,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Settings"),
-      ),
+      appBar: AppBar(title: const Text("Settings")),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(vertical: 20),
         child: Column(
@@ -29,7 +28,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildSettingsTile(
               icon: Icons.person_outline,
               title: "Edit Profile",
-              subtitle: "Update your name and email",
+              subtitle: AuthService.currentUser?.email ?? '',
               onTap: () {},
             ),
             _buildSettingsTile(
@@ -37,7 +36,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: "Change Password",
               onTap: () {},
             ),
-            
+
             const SizedBox(height: 24),
             _buildSectionHeader("Preferences"),
             _buildSwitchTile(
@@ -70,10 +69,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 40),
             Center(
               child: TextButton(
-                onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false),
+                onPressed: () async {
+                  await AuthService.logout();
+                  if (context.mounted) {
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      '/',
+                      (route) => false,
+                    );
+                  }
+                },
                 child: const Text(
                   "Logout",
-                  style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -88,34 +99,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       child: Text(
         title.toUpperCase(),
-        style: const TextStyle(color: accentGreen, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+        style: const TextStyle(
+          color: accentGreen,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.2,
+        ),
       ),
     );
   }
 
-  Widget _buildSettingsTile({required IconData icon, required String title, String? subtitle, required VoidCallback onTap}) {
+  Widget _buildSettingsTile({
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    required VoidCallback onTap,
+  }) {
     return ListTile(
       onTap: onTap,
       leading: Container(
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: surfaceColor, borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
         child: Icon(icon, color: Colors.white70, size: 20),
       ),
       title: Text(title, style: const TextStyle(fontSize: 16)),
-      subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 13)) : null,
+      subtitle: subtitle != null
+          ? Text(
+              subtitle,
+              style: const TextStyle(color: Colors.white38, fontSize: 13),
+            )
+          : null,
       trailing: const Icon(Icons.chevron_right_rounded, color: Colors.white24),
     );
   }
 
-  Widget _buildSwitchTile({required IconData icon, required String title, required bool value, required Function(bool) onChanged}) {
+  Widget _buildSwitchTile({
+    required IconData icon,
+    required String title,
+    required bool value,
+    required Function(bool) onChanged,
+  }) {
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: surfaceColor, borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
         child: Icon(icon, color: Colors.white70, size: 20),
       ),
       title: Text(title, style: const TextStyle(fontSize: 16)),
-      trailing: Switch.adaptive(value: value, activeColor: accentGreen, onChanged: onChanged),
+      trailing: Switch.adaptive(
+        value: value,
+        activeColor: accentGreen,
+        onChanged: onChanged,
+      ),
     );
   }
 }

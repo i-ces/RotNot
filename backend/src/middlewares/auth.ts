@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { auth } from '../config/firebase';
 import { AppError } from './errorHandler';
+import UserProfile, { UserRole } from '../models/userProfile.model';
 
 // User information attached to request
 export interface RequestUser {
@@ -55,6 +56,19 @@ export const verifyFirebaseToken = async (
 
     // Verify the Firebase ID token
     const decodedToken = await auth.verifyIdToken(token);
+
+    // Auto-create user profile if it doesn't exist
+    let userProfile = await UserProfile.findOne({ firebaseUid: decodedToken.uid });
+    
+    if (!userProfile) {
+      userProfile = await UserProfile.create({
+        firebaseUid: decodedToken.uid,
+        role: UserRole.USER,
+        name: decodedToken.name || 'User',
+        email: decodedToken.email,
+        phone: decodedToken.phone_number || '',
+      });
+    }
 
     // Attach user info to request object
     req.user = {
