@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-// Importing your future files
+// Importing the screens from your separate files
 import 'screens/home.dart';
 import 'screens/food_detection.dart';
 import 'screens/recipe.dart';
@@ -17,9 +17,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: HomeScreen(),
+      title: 'RotNot',
+      theme: ThemeData(
+        primarySwatch: Colors.teal,
+      ),
+      home: const HomeScreen(),
     );
   }
 }
@@ -32,15 +36,17 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // Navigation State
   Widget _activeBody = const Home();
   String _activeTitle = 'RotNot';
 
+  // Function to switch screens
   void _changeScreen(Widget newScreen, String newTitle) {
     setState(() {
       _activeBody = newScreen;
       _activeTitle = newTitle;
     });
-    Navigator.pop(context);
+    Navigator.pop(context); // Closes the drawer
   }
 
   @override
@@ -51,49 +57,93 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.teal,
       ),
       drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
+        child: Column(
           children: [
+            // Header with Icon and App Name
             const DrawerHeader(
               decoration: BoxDecoration(color: Colors.teal),
-              child: Text('Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.eco_rounded, color: Colors.white, size: 48),
+                    SizedBox(height: 10),
+                    Text(
+                      'RotNot',
+                      style: TextStyle(
+                        color: Colors.white, 
+                        fontSize: 22, 
+                        fontWeight: FontWeight.bold
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-            // ... inside the Drawer ListView ...
+            
+            // Scrollable Menu Items
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  _buildDrawerTile(
+                    title: 'Home', 
+                    icon: Icons.home_rounded, 
+                    screen: const Home()
+                  ),
+                  _buildDrawerTile(
+                    title: 'Food Detection', 
+                    icon: Icons.camera_rounded, 
+                    screen: const FoodDetectionScreen()
+                  ),
+                  _buildDrawerTile(
+                    title: 'Recipe', 
+                    icon: Icons.restaurant_menu_rounded, 
+                    screen: const RecipeScreen()
+                  ),
+                  _buildDrawerTile(
+                    title: 'Donation', 
+                    icon: Icons.volunteer_activism_rounded, 
+                    screen: const DonationScreen()
+                  ),
+                  _buildDrawerTile(
+                    title: 'Shelf', 
+                    icon: Icons.inventory_2_rounded, 
+                    screen: const ShelfScreen()
+                  ),
+                  _buildDrawerTile(
+                    title: 'Settings', 
+                    icon: Icons.settings_rounded, 
+                    screen: const SettingsScreen()
+                  ),
+                ],
+              ),
+            ),
+
+            // Footer Section
+            const Divider(),
             ListTile(
-              leading: const Icon(Icons.home_rounded, color: Colors.teal),
-              title: const Text('Home'), 
-              onTap: () => _changeScreen(const Home(), 'Home')
+              leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+              title: const Text('Logout', style: TextStyle(color: Colors.redAccent)),
+              onTap: () {
+                // Add logout logic here later
+                Navigator.pop(context);
+              },
             ),
-            ListTile(
-              leading: const Icon(Icons.camera_rounded, color: Colors.teal),
-              title: const Text('Food Detection'), 
-              onTap: () => _changeScreen(const FoodDetectionScreen(), 'Food Detection')
-            ),
-            ListTile(
-              leading: const Icon(Icons.restaurant_menu_rounded, color: Colors.teal),
-              title: const Text('Recipe'), 
-              onTap: () => _changeScreen(const RecipeScreen(), 'Recipes')
-            ),
-            ListTile(
-              leading: const Icon(Icons.volunteer_activism_rounded, color: Colors.teal),
-              title: const Text('Donation'), 
-              onTap: () => _changeScreen(const DonationScreen(), 'Donations')
-            ),
-            ListTile(
-              leading: const Icon(Icons.inventory_2_rounded, color: Colors.teal),
-              title: const Text('Shelf'), 
-              onTap: () => _changeScreen(const ShelfScreen(), 'My Shelf')
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings_rounded, color: Colors.teal),
-              title: const Text('Settings'), 
-              onTap: () => _changeScreen(const SettingsScreen(), 'Settings')
-            ),
-// ...
+            const SizedBox(height: 20),
           ],
         ),
       ),
       body: _activeBody,
+    );
+  }
+
+  // Helper widget to keep the drawer code clean
+  Widget _buildDrawerTile({required String title, required IconData icon, required Widget screen}) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.teal),
+      title: Text(title),
+      onTap: () => _changeScreen(screen, title == 'Home' ? 'RotNot' : title),
     );
   }
 }
