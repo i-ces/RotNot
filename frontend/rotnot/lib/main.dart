@@ -1,36 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'services/auth_service.dart';
 
 // Import all your screen files
 import 'screens/login.dart';
 import 'screens/home.dart';
 import 'screens/food_detection.dart';
-import 'screens/shelf.dart';      
+import 'screens/shelf.dart';
 import 'screens/donation.dart';
-import 'screens/profile.dart'; 
+import 'screens/profile.dart';
 import 'screens/signup.dart';
 import 'screens/forgotpw.dart';
 import 'screens/settings.dart';
 import 'screens/help.dart';
 import 'screens/smartrecipe.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    systemNavigationBarColor: Colors.transparent,
-    systemNavigationBarIconBrightness: Brightness.light,
-  ));
+  // Android reads Firebase config from google-services.json automatically
+  await Firebase.initializeApp();
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
+  );
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  static const Color scaffoldBg = Color(0xFF121212);    
-  static const Color surfaceColor = Color(0xFF1E1E1E); 
-  static const Color accentGreen = Color(0xFF2ECC71);  
-  static const Color appBarColor = Color(0xFF1A1A1A);  
+  static const Color scaffoldBg = Color(0xFF121212);
+  static const Color surfaceColor = Color(0xFF1E1E1E);
+  static const Color accentGreen = Color(0xFF2ECC71);
+  static const Color appBarColor = Color(0xFF1A1A1A);
 
   @override
   Widget build(BuildContext context) {
@@ -45,10 +52,36 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => const LoginPage(),
+        '/': (context) => const AuthGate(),
         '/signup': (context) => const SignUpPage(),
         '/forgotpw': (context) => const ForgotPasswordPage(),
         '/home': (context) => const HomeScreen(),
+      },
+    );
+  }
+}
+
+/// Listens to FirebaseAuth state and routes accordingly
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: Color(0xFF121212),
+            body: Center(
+              child: CircularProgressIndicator(color: Color(0xFF2ECC71)),
+            ),
+          );
+        }
+        if (snapshot.hasData) {
+          return const HomeScreen();
+        }
+        return const LoginPage();
       },
     );
   }
@@ -63,12 +96,14 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  bool _isSearchActive = false; 
+  bool _isSearchActive = false;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   List<Widget> get _pages => [
     const Home(),
-    ShelfScreen(onSearchToggle: (isActive) => setState(() => _isSearchActive = isActive)),
+    ShelfScreen(
+      onSearchToggle: (isActive) => setState(() => _isSearchActive = isActive),
+    ),
     const FoodDetectionScreen(),
     const DonationScreen(),
     const ProfilePage(),
@@ -84,21 +119,22 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey, 
+      key: _scaffoldKey,
       drawer: _buildSidebar(context),
       body: SafeArea(
         child: Stack(
           children: [
-            IndexedStack(
-              index: _selectedIndex,
-              children: _pages,
-            ),
+            IndexedStack(index: _selectedIndex, children: _pages),
             if (!_isSearchActive)
               Positioned(
                 top: 10,
                 left: 10,
                 child: IconButton(
-                  icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 28),
+                  icon: const Icon(
+                    Icons.menu_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                   onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                 ),
               ),
@@ -107,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       bottomNavigationBar: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        height: _isSearchActive ? 0 : null, 
+        height: _isSearchActive ? 0 : null,
         child: Wrap(
           children: [
             SafeArea(
@@ -123,7 +159,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     _buildNavItem(0, Icons.home_rounded, "Home"),
                     _buildNavItem(1, Icons.inventory_2_rounded, "Shelf"),
                     _buildCameraButton(),
-                    _buildNavItem(3, Icons.volunteer_activism_rounded, "Donate"),
+                    _buildNavItem(
+                      3,
+                      Icons.volunteer_activism_rounded,
+                      "Donate",
+                    ),
                     _buildNavItem(4, Icons.person_rounded, "Profile"),
                   ],
                 ),
@@ -146,8 +186,14 @@ class _HomeScreenState extends State<HomeScreen> {
               backgroundColor: MyApp.accentGreen,
               child: Icon(Icons.person, color: Colors.white, size: 40),
             ),
-            accountName: const Text("Alex Johnson", style: TextStyle(fontWeight: FontWeight.bold)),
-            accountEmail: const Text("alex.j@example.com", style: TextStyle(color: Colors.white70)),
+            accountName: const Text(
+              "Alex Johnson",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            accountEmail: const Text(
+              "alex.j@example.com",
+              style: TextStyle(color: Colors.white70),
+            ),
           ),
           Expanded(
             child: ListView(
@@ -156,40 +202,64 @@ class _HomeScreenState extends State<HomeScreen> {
                 _drawerItem(Icons.analytics_rounded, "Waste Analytics", () {}),
                 _drawerItem(Icons.restaurant_menu_rounded, "Smart Recipes", () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const SmartRecipesScreen()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SmartRecipesScreen(),
+                    ),
+                  );
                 }),
-                _drawerItem(Icons.notifications_active_rounded, "Expiry Alerts", () {}),
+                _drawerItem(
+                  Icons.notifications_active_rounded,
+                  "Expiry Alerts",
+                  () {},
+                ),
                 _drawerItem(Icons.history_rounded, "Donation History", () {}),
                 const Divider(color: Colors.white12, indent: 20, endIndent: 20),
                 _drawerItem(Icons.settings_rounded, "Settings", () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsScreen(),
+                    ),
+                  );
                 }),
                 _drawerItem(Icons.help_outline_rounded, "Help & Support", () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const HelpScreen()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HelpScreen()),
+                  );
                 }),
               ],
             ),
           ),
           Padding(
             padding: const EdgeInsets.only(bottom: 20),
-            child: _drawerItem(
-              Icons.logout_rounded, 
-              "Logout", 
-              () => Navigator.pushReplacementNamed(context, '/'),
-              color: Colors.redAccent
-            ),
+            child: _drawerItem(Icons.logout_rounded, "Logout", () async {
+              await AuthService.logout();
+              if (!context.mounted) return;
+              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+            }, color: Colors.redAccent),
           ),
         ],
       ),
     );
   }
 
-  Widget _drawerItem(IconData icon, String title, VoidCallback onTap, {Color? color}) {
+  Widget _drawerItem(
+    IconData icon,
+    String title,
+    VoidCallback onTap, {
+    Color? color,
+  }) {
     return ListTile(
       leading: Icon(icon, color: color ?? Colors.white70, size: 24),
-      title: Text(title, style: TextStyle(color: color ?? Colors.white, fontSize: 15)),
+      title: Text(
+        title,
+        style: TextStyle(color: color ?? Colors.white, fontSize: 15),
+      ),
       onTap: onTap,
       visualDensity: const VisualDensity(vertical: -2),
     );
@@ -212,7 +282,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 28),
+        child: const Icon(
+          Icons.camera_alt_rounded,
+          color: Colors.white,
+          size: 28,
+        ),
       ),
     );
   }
@@ -228,13 +302,20 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: isSelected ? MyApp.accentGreen : Colors.white38, size: 24),
+            Icon(
+              icon,
+              color: isSelected ? MyApp.accentGreen : Colors.white38,
+              size: 24,
+            ),
             const SizedBox(height: 4),
-            Text(label, style: TextStyle(
+            Text(
+              label,
+              style: TextStyle(
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 color: isSelected ? MyApp.accentGreen : Colors.white38,
-            )),
+              ),
+            ),
           ],
         ),
       ),
