@@ -34,7 +34,12 @@ class SmartRecipesScreen extends StatelessWidget {
               "Don't let these go to waste! AI can find recipes to use them up right now.",
               style: TextStyle(color: Colors.white60, fontSize: 14),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
+
+            // NEW: KITCHEN RESCUE BUTTON (Mix all expiring items)
+            _buildRescueButton(context, expiringItems),
+
+            const SizedBox(height: 16),
 
             ListView.builder(
               shrinkWrap: true,
@@ -48,7 +53,7 @@ class SmartRecipesScreen extends StatelessWidget {
 
             const SizedBox(height: 40),
 
-            // --- SECTION 2: PANTRY MIX (Button Included Here Now) ---
+            // --- SECTION 2: PANTRY MIX ---
             const Text(
               "Pantry Mix",
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -80,7 +85,7 @@ class SmartRecipesScreen extends StatelessWidget {
                     width: double.infinity,
                     height: 55,
                     child: ElevatedButton(
-                      onPressed: () => _showAILoader(context),
+                      onPressed: () => _showAILoader(context, "Scanning whole shelf..."),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: accentGreen,
                         foregroundColor: Colors.white,
@@ -96,19 +101,44 @@ class SmartRecipesScreen extends StatelessWidget {
                 ],
               ),
             ),
-
-            // Space for future "Further things" you mentioned
-            const SizedBox(height: 40),
-            _buildFutureFeaturePlaceholder("Recipe History"),
-            const SizedBox(height: 12),
-            _buildFutureFeaturePlaceholder("Cuisine Preferences"),
+            const SizedBox(height: 30),
           ],
         ),
       ),
     );
   }
 
-  void _showAILoader(BuildContext context) {
+  // Widget for the new "Mix Expiring Items" button
+  Widget _buildRescueButton(BuildContext context, List expiringItems) {
+    return InkWell(
+      onTap: () => _showAILoader(context, "Combining ${expiringItems.length} urgent items..."),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [accentOrange.withOpacity(0.2), Colors.transparent],
+          ),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: accentOrange.withOpacity(0.4)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.auto_fix_high_rounded, color: accentOrange, size: 20),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                "Kitchen Rescue: Mix all expiring items",
+                style: TextStyle(color: accentOrange, fontWeight: FontWeight.w600, fontSize: 14),
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, color: accentOrange),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAILoader(BuildContext context, String message) {
     showModalBottomSheet(
       context: context,
       backgroundColor: surfaceColor,
@@ -116,12 +146,11 @@ class SmartRecipesScreen extends StatelessWidget {
       builder: (context) => Container(
         height: 250,
         padding: const EdgeInsets.all(30),
-        child: const Column(
+        child: Column(
           children: [
-            CircularProgressIndicator(color: accentGreen),
+            const CircularProgressIndicator(color: accentGreen),
             const SizedBox(height: 20),
-            const Text("Analyzing Shelf Contents...",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text(message, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             const SizedBox(height: 10),
             const Text(
               "Our AI is mixing ingredients to find the perfect recipe for you.",
@@ -141,44 +170,25 @@ class SmartRecipesScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: surfaceColor,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: accentOrange.withOpacity(0.3)),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.timer_rounded, color: accentOrange),
+          const Icon(Icons.timer_rounded, color: accentOrange, size: 20),
           const SizedBox(width: 15),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                Text(timeLeft, style: const TextStyle(color: accentOrange, fontSize: 12)),
+                Text(timeLeft, style: const TextStyle(color: Colors.white38, fontSize: 12)),
               ],
             ),
           ),
           TextButton(
-            onPressed: () {},
+            onPressed: () => _showAILoader(context, "Finding recipes for $name..."),
             child: const Text("Use This", style: TextStyle(color: accentGreen)),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFutureFeaturePlaceholder(String title) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.02)),
-      ),
-      child: Row(
-        children: [
-          Text(title, style: const TextStyle(color: Colors.white24)),
-          const Spacer(),
-          const Icon(Icons.lock_outline, color: Colors.white10, size: 18),
         ],
       ),
     );
