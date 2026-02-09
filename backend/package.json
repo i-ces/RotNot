@@ -9,6 +9,7 @@
     "start": "node dist/server.js",
     "seed": "ts-node src/scripts/seed.ts",
     "seed:prod": "node dist/scripts/seed.js",
+    "clear": "ts-node src/scripts/clearData.ts",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write \"src/**/*.ts\""
   },
