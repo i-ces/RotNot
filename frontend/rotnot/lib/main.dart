@@ -10,6 +10,7 @@ import 'screens/donation.dart';
 import 'screens/profile.dart'; 
 import 'screens/signup.dart';
 import 'screens/forgotpw.dart';
+import 'screens/settings.dart'; // Added this import
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -61,6 +62,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   bool _isSearchActive = false; 
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   List<Widget> get _pages => [
     const Home(),
@@ -80,37 +82,48 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // SafeArea ensures content doesn't go behind the status bar/notch
+      key: _scaffoldKey, 
+      
+      drawer: _buildSidebar(context),
+
       body: SafeArea(
-        child: IndexedStack(
-          index: _selectedIndex,
-          children: _pages,
+        child: Stack(
+          children: [
+            IndexedStack(
+              index: _selectedIndex,
+              children: _pages,
+            ),
+            if (!_isSearchActive)
+              Positioned(
+                top: 10,
+                left: 10,
+                child: IconButton(
+                  icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 28),
+                  onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                ),
+              ),
+          ],
         ),
       ),
 
-      // We removed the separate FloatingActionButton to put it inside the BottomAppBar
       bottomNavigationBar: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        height: _isSearchActive ? 0 : null, // Hide when searching
+        height: _isSearchActive ? 0 : null, 
         child: Wrap(
           children: [
-            // SafeArea handles the bottom system navigation bar (Home/Back/Recent buttons)
             SafeArea(
               child: BottomAppBar(
                 color: MyApp.surfaceColor,
                 elevation: 0,
-                padding: EdgeInsets.zero, // Clean padding for custom row
-                height: 80, // Slightly taller to accommodate the camera button
+                padding: EdgeInsets.zero,
+                height: 80,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  crossAxisAlignment: CrossAxisAlignment.center, // Aligns all items in the same horizontal row
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     _buildNavItem(0, Icons.home_rounded, "Home"),
                     _buildNavItem(1, Icons.inventory_2_rounded, "Shelf"),
-                    
-                    // --- INTEGRATED CAMERA BUTTON ---
                     _buildCameraButton(),
-                    
                     _buildNavItem(3, Icons.volunteer_activism_rounded, "Donate"),
                     _buildNavItem(4, Icons.person_rounded, "Profile"),
                   ],
@@ -120,6 +133,68 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSidebar(BuildContext context) {
+    return Drawer(
+      backgroundColor: MyApp.scaffoldBg,
+      child: Column(
+        children: [
+          UserAccountsDrawerHeader(
+            decoration: const BoxDecoration(color: MyApp.surfaceColor),
+            currentAccountPicture: const CircleAvatar(
+              backgroundColor: MyApp.accentGreen,
+              child: Icon(Icons.person, color: Colors.white, size: 40),
+            ),
+            accountName: const Text("Alex Johnson", style: TextStyle(fontWeight: FontWeight.bold)),
+            accountEmail: const Text("alex.j@example.com", style: TextStyle(color: Colors.white70)),
+          ),
+          
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                _drawerItem(Icons.analytics_rounded, "Waste Analytics", () {}),
+                _drawerItem(Icons.restaurant_menu_rounded, "Smart Recipes", () {}),
+                _drawerItem(Icons.notifications_active_rounded, "Expiry Alerts", () {}),
+                _drawerItem(Icons.history_rounded, "Donation History", () {}),
+                const Divider(color: Colors.white12, indent: 20, endIndent: 20),
+                
+                // --- CONNECTED SETTINGS ---
+                _drawerItem(Icons.settings_rounded, "Settings", () {
+                  Navigator.pop(context); // Close drawer
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                  );
+                }),
+                
+                _drawerItem(Icons.help_outline_rounded, "Help & Support", () {}),
+              ],
+            ),
+          ),
+          
+          Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: _drawerItem(
+              Icons.logout_rounded, 
+              "Logout", 
+              () => Navigator.pushReplacementNamed(context, '/'),
+              color: Colors.redAccent
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _drawerItem(IconData icon, String title, VoidCallback onTap, {Color? color}) {
+    return ListTile(
+      leading: Icon(icon, color: color ?? Colors.white70, size: 24),
+      title: Text(title, style: TextStyle(color: color ?? Colors.white, fontSize: 15)),
+      onTap: onTap,
+      visualDensity: const VisualDensity(vertical: -2),
     );
   }
 
@@ -156,20 +231,13 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: isSelected ? MyApp.accentGreen : Colors.white38,
-              size: 24,
-            ),
+            Icon(icon, color: isSelected ? MyApp.accentGreen : Colors.white38, size: 24),
             const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
+            Text(label, style: TextStyle(
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 color: isSelected ? MyApp.accentGreen : Colors.white38,
-              ),
-            )
+            )),
           ],
         ),
       ),
