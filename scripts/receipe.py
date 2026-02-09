@@ -118,3 +118,20 @@ def get_full_recipe(recipe_name: str, available_ingredients: list[str] = None) -
 
 
      
+# Test block 
+# if __name__ == "__main__":
+   
+    # test_ingredients = ["chicken", "tomato", "garlic", "basil"]
+    # test_recipe_name = "Chicken Chilli"
+    
+    # print(" Testing Recipe Name Generation ")
+    # print(f"Ingredients: {test_ingredients}")
+    # names = generate_recipe_names(test_ingredients)
+    # for i, name in enumerate(names, 1):
+    #     print(f"  {i}. {name}")
+    
+    # print("\n Testing Full Recipe Generation ")
+    # print(f"Recipe: {test_recipe_name}")
+    # recipe = get_full_recipe(test_recipe_name)
+    # print(recipe['full_description'])
+ 
