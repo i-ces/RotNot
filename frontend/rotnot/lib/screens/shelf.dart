@@ -266,6 +266,8 @@ class _ShelfScreenState extends State<ShelfScreen>
           ),
           child: TabBar(
             controller: _tabController,
+            isScrollable: false,
+            labelPadding: const EdgeInsets.symmetric(horizontal: 4),
             indicator: BoxDecoration(
               color: MyApp.accentGreen.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
@@ -377,21 +379,24 @@ class _ShelfScreenState extends State<ShelfScreen>
 
   Widget _buildTab(String label, int count) {
     return Tab(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(label),
-          const SizedBox(width: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(8),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 12)),
+            const SizedBox(width: 3),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text('$count',
+                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
             ),
-            child: Text('$count',
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
