@@ -19,7 +19,6 @@ import 'screens/smartrecipe.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Android reads Firebase config from google-services.json automatically
   await Firebase.initializeApp();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -61,7 +60,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-/// Listens to FirebaseAuth state and routes accordingly
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
@@ -100,14 +98,14 @@ class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   List<Widget> get _pages => [
-    const Home(),
-    ShelfScreen(
-      onSearchToggle: (isActive) => setState(() => _isSearchActive = isActive),
-    ),
-    const FoodDetectionScreen(),
-    const DonationScreen(),
-    const ProfilePage(),
-  ];
+        const Home(),
+        ShelfScreen(
+          onSearchToggle: (isActive) => setState(() => _isSearchActive = isActive),
+        ),
+        const FoodDetectionScreen(),
+        const DonationScreen(),
+        const ProfilePage(),
+      ];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -121,24 +119,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       key: _scaffoldKey,
       drawer: _buildSidebar(context),
+      // FIX: Removed the Stack and Positioned IconButton that was overlapping content.
+      // The body now only contains the IndexedStack.
       body: SafeArea(
-        child: Stack(
-          children: [
-            IndexedStack(index: _selectedIndex, children: _pages),
-            if (!_isSearchActive)
-              Positioned(
-                top: 10,
-                left: 10,
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.menu_rounded,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                  onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-                ),
-              ),
-          ],
+        child: IndexedStack(
+          index: _selectedIndex,
+          children: _pages,
         ),
       ),
       bottomNavigationBar: AnimatedContainer(
