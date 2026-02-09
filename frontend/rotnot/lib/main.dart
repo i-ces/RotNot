@@ -12,7 +12,7 @@ import 'screens/signup.dart';
 import 'screens/forgotpw.dart';
 import 'screens/settings.dart';
 import 'screens/help.dart';
-import 'screens/smartrecipe.dart'; // Added this
+import 'screens/smartrecipe.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -154,13 +154,10 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: EdgeInsets.zero,
               children: [
                 _drawerItem(Icons.analytics_rounded, "Waste Analytics", () {}),
-                
-                // --- CONNECTED SMART RECIPES ---
                 _drawerItem(Icons.restaurant_menu_rounded, "Smart Recipes", () {
                   Navigator.pop(context);
                   Navigator.push(context, MaterialPageRoute(builder: (context) => const SmartRecipesScreen()));
                 }),
-
                 _drawerItem(Icons.notifications_active_rounded, "Expiry Alerts", () {}),
                 _drawerItem(Icons.history_rounded, "Donation History", () {}),
                 const Divider(color: Colors.white12, indent: 20, endIndent: 20),
