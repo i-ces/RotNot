@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'screens/login.dart';
 import 'screens/home.dart';
 import 'screens/food_detection.dart';
@@ -7,6 +6,8 @@ import 'screens/recipe.dart';
 import 'screens/donation.dart';
 import 'screens/shelf.dart';
 import 'screens/settings.dart';
+import 'screens/signup.dart';      // New Import
+import 'screens/forgotpw.dart';    // New Import
 
 void main() {
   runApp(const MyApp());
@@ -46,11 +47,15 @@ class MyApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const LoginPage(),
+        '/signup': (context) => const SignUpPage(),
+        '/forgotpw': (context) => const ForgotPasswordPage(),
         '/home': (context) => const HomeScreen(),
       },
     );
   }
 }
+
+// ... Keep your existing HomeScreen and _HomeScreenState exactly as they are ...
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
