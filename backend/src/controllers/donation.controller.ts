@@ -19,12 +19,12 @@ export const createDonation = async (
       throw new AppError('User not authenticated', 401);
     }
 
-    const { foodName, quantity, preparedAt, expiryTime, donorType, location } = req.body;
+    const { foodName, quantity, preparedAt, expiryTime, donorType, location, donorName, donorPhone, pickupAddress } = req.body;
 
     // Validate required fields
-    if (!foodName || !quantity || !preparedAt || !expiryTime || !donorType || !location) {
+    if (!foodName || !quantity || !preparedAt || !expiryTime || !donorType || !location || !donorName || !donorPhone || !pickupAddress) {
       throw new AppError(
-        'Food name, quantity, prepared at, expiry time, donor type, and location are required',
+        'Food name, quantity, prepared at, expiry time, donor type, location, donor name, donor phone, and pickup address are required',
         400
       );
     }
@@ -45,6 +45,9 @@ export const createDonation = async (
       expiryTime: new Date(expiryTime),
       donorType,
       location,
+      donorName,
+      donorPhone,
+      pickupAddress,
       status: DonationStatus.AVAILABLE,
       donorId,
     });
@@ -61,6 +64,9 @@ export const createDonation = async (
           expiryTime: donation.expiryTime,
           donorType: donation.donorType,
           location: donation.location,
+          donorName: donation.donorName,
+          donorPhone: donation.donorPhone,
+          pickupAddress: donation.pickupAddress,
           status: donation.status,
           donorId: donation.donorId,
           claimedBy: donation.claimedBy,
@@ -109,6 +115,9 @@ export const getAvailableDonations = async (
           expiryTime: donation.expiryTime,
           donorType: donation.donorType,
           location: donation.location,
+          donorName: donation.donorName,
+          donorPhone: donation.donorPhone,
+          pickupAddress: donation.pickupAddress,
           status: donation.status,
           donorId: donation.donorId,
           claimedBy: donation.claimedBy,
@@ -173,6 +182,9 @@ export const claimDonation = async (
           expiryTime: donation.expiryTime,
           donorType: donation.donorType,
           location: donation.location,
+          donorName: donation.donorName,
+          donorPhone: donation.donorPhone,
+          pickupAddress: donation.pickupAddress,
           status: donation.status,
           donorId: donation.donorId,
           claimedBy: donation.claimedBy,
@@ -236,6 +248,9 @@ export const completeDonation = async (
           expiryTime: donation.expiryTime,
           donorType: donation.donorType,
           location: donation.location,
+          donorName: donation.donorName,
+          donorPhone: donation.donorPhone,
+          pickupAddress: donation.pickupAddress,
           status: donation.status,
           donorId: donation.donorId,
           claimedBy: donation.claimedBy,

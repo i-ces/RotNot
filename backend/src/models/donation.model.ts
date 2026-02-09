@@ -19,6 +19,9 @@ export interface IDonation extends Document {
   expiryTime: Date;
   donorType: DonorType;
   location: string;
+  donorName: string;
+  donorPhone: string;
+  pickupAddress: string;
   status: DonationStatus;
   donorId: string;
   claimedBy?: string;
@@ -52,6 +55,21 @@ const donationSchema = new Schema<IDonation>(
     location: {
       type: String,
       required: [true, 'Location is required'],
+      trim: true,
+    },
+    donorName: {
+      type: String,
+      required: [true, 'Donor name is required'],
+      trim: true,
+    },
+    donorPhone: {
+      type: String,
+      required: [true, 'Donor phone is required'],
+      trim: true,
+    },
+    pickupAddress: {
+      type: String,
+      required: [true, 'Pickup address is required'],
       trim: true,
     },
     status: {
