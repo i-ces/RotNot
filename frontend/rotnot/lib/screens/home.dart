@@ -12,43 +12,42 @@ class Home extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // This would eventually come from your Auth provider
-    const String username = "Alex"; 
+    const String username = "Alex";
 
     return Scaffold(
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 60),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20), // Adjusted vertical padding
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- 1. PERSONALIZED GREETING HEADER ---
+            // --- 0. TOP NAVIGATION ROW (Menu & Notification) ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Hey, $username",
-                      style: TextStyle(
-                        fontSize: 28, 
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      "Track your food, reduce waste,\nsave the planet.",
-                      style: TextStyle(
-                        color: Colors.white60, 
-                        fontSize: 13, 
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
+                _buildMenuButton(context),
                 _buildNotificationBell(),
               ],
+            ),
+
+            const SizedBox(height: 25),
+
+            // --- 1. PERSONALIZED GREETING HEADER ---
+            const Text(
+              "Hey, $username",
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              "Track your food, reduce waste,\nsave the planet.",
+              style: TextStyle(
+                color: Colors.white60,
+                fontSize: 13,
+                height: 1.4,
+              ),
             ),
 
             const SizedBox(height: 35),
@@ -65,7 +64,7 @@ class Home extends StatelessWidget {
 
             const SizedBox(height: 30),
 
-            // --- 3. SAVINGS IMPACT CARD (LOCALIZED NEPAL) ---
+            // --- 3. SAVINGS IMPACT CARD ---
             const Text(
               "Savings Impact",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -109,21 +108,9 @@ class Home extends StatelessWidget {
                   const SizedBox(height: 25),
                   Row(
                     children: [
-                      // Localized Money Saved (NPR 210/kg average)
-                      _buildImpactStat(
-                        "MONEY SAVED", 
-                        "रू 1,420", 
-                        "+12% this week", 
-                        accentGreen
-                      ),
+                      _buildImpactStat("MONEY SAVED", "रू 1,420", "+12% this week", accentGreen),
                       const SizedBox(width: 15),
-                      // CO2 Avoided (2.5 kg CO2e factor)
-                      _buildImpactStat(
-                        "CO2 AVOIDED", 
-                        "18.4 kg", 
-                        "CO₂e saved", 
-                        const Color(0xFF64FFDA)
-                      ),
+                      _buildImpactStat("CO2 AVOIDED", "18.4 kg", "CO₂e saved", const Color(0xFF64FFDA)),
                     ],
                   ),
                 ],
@@ -136,6 +123,22 @@ class Home extends StatelessWidget {
   }
 
   // --- HELPER WIDGETS ---
+
+  // NEW: Integrated Menu Button
+  Widget _buildMenuButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Scaffold.of(context).openDrawer(),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+        ),
+        child: const Icon(Icons.menu_rounded, color: Colors.white, size: 26),
+      ),
+    );
+  }
 
   Widget _buildNotificationBell() {
     return Container(
@@ -184,10 +187,7 @@ class Home extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Text(
-            label, 
-            style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600)
-          ),
+          Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -204,15 +204,7 @@ class Home extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label, 
-              style: const TextStyle(
-                color: Colors.white38, 
-                fontSize: 9, 
-                fontWeight: FontWeight.bold, 
-                letterSpacing: 0.5
-              )
-            ),
+            Text(label, style: const TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
             const SizedBox(height: 8),
             Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
@@ -248,13 +240,7 @@ class RingPainter extends CustomPainter {
       ..maskFilter = const MaskFilter.blur(BlurStyle.solid, 3);
 
     canvas.drawCircle(center, radius, bgPaint);
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -math.pi / 2,
-      2 * math.pi * progress,
-      false,
-      progressPaint,
-    );
+    canvas.drawArc(Rect.fromCircle(center: center, radius: radius), -math.pi / 2, 2 * math.pi * progress, false, progressPaint);
   }
 
   @override
