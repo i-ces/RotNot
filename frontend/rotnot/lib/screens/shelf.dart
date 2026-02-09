@@ -235,23 +235,26 @@ class _ShelfScreenState extends State<ShelfScreen>
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // ── Search bar ──
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-          child: TextField(
-            onChanged: (v) => setState(() => _searchQuery = v),
-            style: const TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              hintText: 'Search items…',
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-              prefixIcon:
-                  Icon(Icons.search_rounded, color: Colors.white.withOpacity(0.4)),
-              filled: true,
-              fillColor: MyApp.surfaceColor,
-              contentPadding: const EdgeInsets.symmetric(vertical: 0),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide.none,
+        // ── Search bar (With SafeArea and increased padding) ──
+        SafeArea(
+          bottom: false, // We only care about the top notch/status bar
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 32, 16, 4),
+            child: TextField(
+              onChanged: (v) => setState(() => _searchQuery = v),
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Search items…',
+                hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                prefixIcon:
+                    Icon(Icons.search_rounded, color: Colors.white.withOpacity(0.4)),
+                filled: true,
+                fillColor: MyApp.surfaceColor,
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
               ),
             ),
           ),
@@ -325,7 +328,7 @@ class _ShelfScreenState extends State<ShelfScreen>
     );
   }
 
-  // ─── Summary row ──────────────────────────────────────────────────────────
+  // ─── Summary row (Note: Not called in main build, but keeping it) ──────────
 
   Widget _buildSummaryRow() {
     return Padding(

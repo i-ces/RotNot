@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
+// Import all your screen files
 import 'screens/login.dart';
 import 'screens/home.dart';
 import 'screens/food_detection.dart';
-import 'screens/recipe.dart';
+import 'screens/shelf.dart';      
 import 'screens/donation.dart';
-import 'screens/shelf.dart';
-import 'screens/settings.dart';
+import 'screens/profile.dart'; 
 import 'screens/signup.dart';
 import 'screens/forgotpw.dart';
 
@@ -64,128 +64,90 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  Widget _activeBody = const Home(); 
-  String _activeTitle = 'Home';
-  IconData _activeIcon = Icons.home_rounded;
+  int _selectedIndex = 0;
 
-  void _changeScreen(Widget newScreen, String newTitle, IconData newIcon) {
+  final List<Widget> _pages = [
+    const Home(),
+    const ShelfScreen(),        
+    const FoodDetectionScreen(), 
+    const DonationScreen(),
+    const ProfilePage(),
+  ];
+
+  void _onItemTapped(int index) {
     setState(() {
-      _activeBody = newScreen;
-      _activeTitle = newTitle;
-      _activeIcon = newIcon;
+      _selectedIndex = index;
     });
-    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
+      ),
+
+      // --- ADJUSTED CAMERA BUTTON ---
+      // Removed centerDocked location to allow it to sit naturally
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(top: 30), // Minimal padding to nudge it into the bar
+        child: FloatingActionButton(
+          onPressed: () => _onItemTapped(2), 
+          backgroundColor: MyApp.accentGreen,
+          elevation: 2, // Lower elevation makes it look more "part of the bar"
+          child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 24),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
+      // --- BOTTOM NAVIGATION BAR ---
+      bottomNavigationBar: BottomAppBar(
+        color: MyApp.surfaceColor,
+        // Removed CircularNotchedRectangle to flatten the bar
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        height: 70, 
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            Icon(_activeIcon, color: MyApp.accentGreen, size: 22),
-            const SizedBox(width: 12),
-            Text(_activeTitle == 'Home' ? 'RotNot' : _activeTitle),
+            _buildNavItem(0, Icons.home_rounded, "Home"),
+            _buildNavItem(1, Icons.inventory_2_rounded, "Shelf"),
+            
+            // This is the gap where the FAB sits
+            const SizedBox(width: 48), 
+            
+            _buildNavItem(3, Icons.volunteer_activism_rounded, "Donate"),
+            _buildNavItem(4, Icons.person_rounded, "Profile"),
           ],
         ),
-      ),
-      drawer: Drawer(
-        backgroundColor: MyApp.surfaceColor,
-        child: SafeArea( // <--- THIS PREVENTS BLEEDING TO THE TOP
-          child: Column(
-            children: [
-              // This pushes the content down further if SafeArea isn't enough
-              const SizedBox(height: 20), 
-
-              // --- LOGO IN DRAWER HEADER ---
-              Container(
-                height: 140,
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: MyApp.appBarColor,
-                  border: Border(
-                    top: BorderSide(color: Colors.white10, width: 1), // Optional: adds a top line
-                    bottom: BorderSide(color: Colors.white10, width: 1),
-                  ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      'assets/images/logo.png',
-                      height: 60,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(Icons.eco_rounded, color: MyApp.accentGreen, size: 50);
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      "ROTNOT",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  children: [
-                    _buildDrawerTile('Home', Icons.home_rounded, const Home()),
-                    _buildDrawerTile('Food Detection', Icons.camera_rounded, const FoodDetectionScreen()),
-                    _buildDrawerTile('Recipe', Icons.restaurant_menu_rounded, const RecipeScreen()),
-                    _buildDrawerTile('Donation', Icons.volunteer_activism_rounded, const DonationScreen()),
-                    _buildDrawerTile('Shelf', Icons.inventory_2_rounded, const ShelfScreen()),
-                    _buildDrawerTile('Settings', Icons.settings_rounded, const SettingsScreen()),
-                  ],
-                ),
-              ),
-
-              const Divider(color: Colors.white10),
-              ListTile(
-                leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-                title: const Text('Logout', style: TextStyle(color: Colors.redAccent)),
-                onTap: () => Navigator.pushReplacementNamed(context, '/'),
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
-      body: SafeArea(
-        bottom: true,
-        child: _activeBody,
       ),
     );
   }
 
-  Widget _buildDrawerTile(String title, IconData icon, Widget screen) {
-    bool isSelected = (_activeTitle == title);
-    
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: isSelected ? MyApp.accentGreen.withOpacity(0.15) : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListTile(
-        leading: Icon(
-          icon, 
-          color: isSelected ? MyApp.accentGreen : Colors.white60,
-          size: 22,
-        ),
-        title: Text(
-          title, 
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.white60,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+  Widget _buildNavItem(int index, IconData icon, String label) {
+    bool isSelected = _selectedIndex == index;
+    return GestureDetector(
+      onTap: () => _onItemTapped(index),
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            color: isSelected ? MyApp.accentGreen : Colors.white38,
+            size: 26,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isSelected ? MyApp.accentGreen : Colors.white38,
+            ),
           )
-        ),
-        onTap: () => _changeScreen(screen, title, icon),
+        ],
       ),
     );
   }
