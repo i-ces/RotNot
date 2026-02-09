@@ -19,95 +19,91 @@ class SmartRecipesScreen extends StatelessWidget {
         title: const Text("Smart Recipes"),
         centerTitle: true,
       ),
-      body: Column( // Changed to Column + Expanded for fixed bottom button
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Expiring Soon",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    "Don't let these go to waste! AI can find recipes to use them up right now.",
-                    style: TextStyle(color: Colors.white60, fontSize: 14),
-                  ),
-                  const SizedBox(height: 20),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- SECTION 1: EXPIRING SOON ---
+            const Text(
+              "Expiring Soon",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              "Don't let these go to waste! AI can find recipes to use them up right now.",
+              style: TextStyle(color: Colors.white60, fontSize: 14),
+            ),
+            const SizedBox(height: 20),
 
-                  // Phase 1: Expiring List
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: expiringItems.length,
-                    itemBuilder: (context, index) {
-                      final item = expiringItems[index];
-                      return _buildExpiringCard(item['name']!, item['days']!, context);
-                    },
-                  ),
-                  const SizedBox(height: 30),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: expiringItems.length,
+              itemBuilder: (context, index) {
+                final item = expiringItems[index];
+                return _buildExpiringCard(item['name']!, item['days']!, context);
+              },
+            ),
 
-                  // Phase 2: Information Section
-                  const Text(
-                    "Pantry Mix",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    "Feeling adventurous? Let AI combine everything on your shelf into a custom meal plan.",
-                    style: TextStyle(color: Colors.white60, fontSize: 14),
-                  ),
-                ],
+            const SizedBox(height: 40),
+
+            // --- SECTION 2: PANTRY MIX (Button Included Here Now) ---
+            const Text(
+              "Pantry Mix",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              "Feeling adventurous? Let AI combine everything on your shelf into a custom meal plan.",
+              style: TextStyle(color: Colors.white60, fontSize: 14),
+            ),
+            const SizedBox(height: 20),
+
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: surfaceColor,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withOpacity(0.05)),
               ),
-            ),
-          ),
-
-          // --- PHASE 2: MASTER COMBINE BUTTON ---
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: surfaceColor,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 20, offset: const Offset(0, -5))
-              ],
-            ),
-            child: SafeArea(
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 children: [
+                  const Icon(Icons.auto_awesome_rounded, color: accentGreen, size: 40),
+                  const SizedBox(height: 16),
                   const Text(
                     "Ready to cook with everything?",
-                    style: TextStyle(color: Colors.white38, fontSize: 12),
+                    style: TextStyle(color: Colors.white38, fontSize: 13),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
                     height: 55,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        // AI Logic for combining all items
-                        _showAILoader(context);
-                      },
-                      icon: const Icon(Icons.auto_awesome_rounded),
-                      label: const Text("SURPRISE ME (ALL ITEMS)", 
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                    child: ElevatedButton(
+                      onPressed: () => _showAILoader(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: accentGreen,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                        elevation: 5,
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        "SURPRISE ME (ALL ITEMS)",
+                        style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.1),
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+
+            // Space for future "Further things" you mentioned
+            const SizedBox(height: 40),
+            _buildFutureFeaturePlaceholder("Recipe History"),
+            const SizedBox(height: 12),
+            _buildFutureFeaturePlaceholder("Cuisine Preferences"),
+          ],
+        ),
       ),
     );
   }
@@ -116,15 +112,16 @@ class SmartRecipesScreen extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: surfaceColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),      
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       builder: (context) => Container(
         height: 250,
         padding: const EdgeInsets.all(30),
-        child: Column(
+        child: const Column(
           children: [
-            const CircularProgressIndicator(color: accentGreen),
+            CircularProgressIndicator(color: accentGreen),
             const SizedBox(height: 20),
-            const Text("Analyzing Shelf Contents...", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const Text("Analyzing Shelf Contents...",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             const SizedBox(height: 10),
             const Text(
               "Our AI is mixing ingredients to find the perfect recipe for you.",
@@ -163,6 +160,25 @@ class SmartRecipesScreen extends StatelessWidget {
             onPressed: () {},
             child: const Text("Use This", style: TextStyle(color: accentGreen)),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFutureFeaturePlaceholder(String title) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.02)),
+      ),
+      child: Row(
+        children: [
+          Text(title, style: const TextStyle(color: Colors.white24)),
+          const Spacer(),
+          const Icon(Icons.lock_outline, color: Colors.white10, size: 18),
         ],
       ),
     );
