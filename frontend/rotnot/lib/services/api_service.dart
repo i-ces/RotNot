@@ -6,6 +6,9 @@ class ApiService {
   // Change this to your backend URL
   static const String _baseUrl = 'http://10.0.2.2:5000/api';
 
+  /// Expose base URL for connection testing
+  static String get baseUrl => _baseUrl;
+
   /// Build headers with Firebase ID token
   static Future<Map<String, String>> _headers() async {
     final token = await AuthService.getIdToken();
@@ -64,5 +67,20 @@ class ApiService {
       headers: headers,
       body: body != null ? jsonEncode(body) : null,
     );
+  }
+
+  /// Check backend health status
+  Future<Map<String, dynamic>> checkHealth() async {
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl/health'));
+      
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception('Health check failed with status: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to connect to backend: $e');
+    }
   }
 }
