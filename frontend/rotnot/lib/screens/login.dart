@@ -8,11 +8,9 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // Controllers for backend integration
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  // Color constants matching main.dart
   static const Color scaffoldBg = Color(0xFF121212);
   static const Color surfaceColor = Color(0xFF1E1E1E);
   static const Color accentGreen = Color(0xFF2ECC71);
@@ -28,13 +26,16 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Brand Icon
-                const Icon(
-                  Icons.eco_rounded,
-                  size: 80,
-                  color: accentGreen,
+                // --- YOUR LOGO ---
+                Image.asset(
+                  'assets/images/logo.png',
+                  height: 120,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(Icons.eco_rounded, size: 80, color: accentGreen);
+                  },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 const Text(
                   "RotNot Login",
                   style: TextStyle(
@@ -43,14 +44,8 @@ class _LoginPageState extends State<LoginPage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  "Preserving food, protecting the planet.",
-                  style: TextStyle(color: Colors.white60, fontSize: 14),
-                ),
                 const SizedBox(height: 40),
 
-                // Email Field
                 TextField(
                   controller: _emailController,
                   style: const TextStyle(color: Colors.white),
@@ -68,7 +63,6 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 16),
 
-                // Password Field
                 TextField(
                   controller: _passwordController,
                   obscureText: true,
@@ -87,13 +81,11 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 24),
 
-                // Login Button
                 SizedBox(
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
                     onPressed: () {
-                      // Navigate to Home shell
                       Navigator.pushReplacementNamed(context, '/home');
                     },
                     style: ElevatedButton.styleFrom(
@@ -105,20 +97,8 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     child: const Text(
                       "LOGIN",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                  ),
-                ),
-                
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    "Forgot Password?",
-                    style: TextStyle(color: accentGreen),
                   ),
                 ),
               ],

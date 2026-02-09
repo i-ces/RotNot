@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
-// Your screen imports
 import 'screens/login.dart';
-import 'screens/home.dart'; // Ensure class inside is now 'Home'
+import 'screens/home.dart';
 import 'screens/food_detection.dart';
 import 'screens/recipe.dart';
 import 'screens/donation.dart';
@@ -16,7 +15,6 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // Color Palette Constants
   static const Color scaffoldBg = Color(0xFF121212);    
   static const Color surfaceColor = Color(0xFF1E1E1E); 
   static const Color accentGreen = Color(0xFF2ECC71);  
@@ -40,7 +38,7 @@ class MyApp extends StatelessWidget {
           titleTextStyle: TextStyle(
             color: Colors.white,
             fontSize: 20,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.bold,
             letterSpacing: 0.5,
           ),
         ),
@@ -62,7 +60,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Updated default screen class to Home()
   Widget _activeBody = const Home(); 
   String _activeTitle = 'Home';
   IconData _activeIcon = Icons.home_rounded;
@@ -92,19 +89,26 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: MyApp.surfaceColor,
         child: Column(
           children: [
+            // --- LOGO IN DRAWER HEADER ---
             Container(
-              height: 150,
+              height: 160,
               width: double.infinity,
               decoration: const BoxDecoration(
                 color: MyApp.appBarColor,
                 border: Border(bottom: BorderSide(color: Colors.white10, width: 1)),
               ),
-              child: const Column(
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.eco_rounded, color: MyApp.accentGreen, size: 50),
-                  SizedBox(height: 10),
-                  Text(
+                  Image.asset(
+                    'assets/images/logo.png',
+                    height: 60,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(Icons.eco_rounded, color: MyApp.accentGreen, size: 50);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
                     "ROTNOT",
                     style: TextStyle(
                       color: Colors.white,
@@ -120,7 +124,6 @@ class _HomeScreenState extends State<HomeScreen> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 children: [
-                  // Using Home() here
                   _buildDrawerTile('Home', Icons.home_rounded, const Home()),
                   _buildDrawerTile('Food Detection', Icons.camera_rounded, const FoodDetectionScreen()),
                   _buildDrawerTile('Recipe', Icons.restaurant_menu_rounded, const RecipeScreen()),
