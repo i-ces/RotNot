@@ -172,17 +172,27 @@ class _DonationScreenState extends State<DonationScreen> {
   }
 
   Future<void> _fetchLocation() async {
-    final position = await LocationService.getCurrentLocation();
-    if (mounted) {
-      setState(() {
-        _loadingLocation = false;
-        if (position != null) {
-          _userLat = position.latitude;
-          _userLng = position.longitude;
-        } else {
+    try {
+      final position = await LocationService.getCurrentLocation();
+      if (mounted) {
+        setState(() {
+          _loadingLocation = false;
+          if (position != null) {
+            _userLat = position.latitude;
+            _userLng = position.longitude;
+          } else {
+            // Couldn't get location — use default (Kathmandu)
+            _locationDenied = true;
+          }
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _loadingLocation = false;
           _locationDenied = true;
-        }
-      });
+        });
+      }
     }
   }
 

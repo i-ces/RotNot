@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:geolocator/geolocator.dart';
 
 class LocationService {
@@ -8,44 +9,56 @@ class LocationService {
   /// Check & request location permissions, then get current position.
   /// Returns the user's current [Position] or `null` if denied/unavailable.
   static Future<Position?> getCurrentLocation() async {
-    // 1. Check if location services are enabled
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      // Location services are off — can't do anything
+    // Geolocator doesn't work on desktop (Linux/Windows/macOS)
+    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
       return null;
     }
 
-    // 2. Check permission
-    LocationPermission permission = await Geolocator.checkPermission();
-
-    if (permission == LocationPermission.denied) {
-      // Ask user for permission
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
+    try {
+      // 1. Check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
         return null;
       }
-    }
 
-    if (permission == LocationPermission.deniedForever) {
-      // Permission permanently denied — user must enable from settings
-      return null;
-    }
+      // 2. Check permission
+      LocationPermission permission = await Geolocator.checkPermission();
 
-    // 3. Permission granted — get position
-    try {
+      if (permission == LocationPermission.denied) {
+        // Ask user for permission
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          return null;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        return null;
+      }
+
+      // 3. Permission granted — get position with timeout
       return await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 10),
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 5),
         ),
       );
     } catch (_) {
-      return null;
+      // If anything fails, try last known position
+      try {
+        return await Geolocator.getLastKnownPosition();
+      } catch (_) {
+        return null;
+      }
     }
   }
 
   /// Opens the device's location/app settings so the user can enable permissions.
   static Future<bool> openSettings() async {
-    return await Geolocator.openLocationSettings();
+    try {
+      return await Geolocator.openAppSettings();
+    } catch (_) {
+      return false;
+    }
   }
 }
