@@ -1,1 +1,1 @@
-# RotNot
+# VECTORHACK2026
