@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-// Importing the screens from your separate files
+// Your screen imports
+import 'screens/login.dart';
 import 'screens/home.dart';
 import 'screens/food_detection.dart';
 import 'screens/recipe.dart';
@@ -20,10 +21,17 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'RotNot',
+      // The theme is set to dark globally here
       theme: ThemeData(
-        primarySwatch: Colors.teal,
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF0D0000),
       ),
-      home: const HomeScreen(),
+      // --- ROUTE NAVIGATION SETUP ---
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const LoginPage(),    // Starting screen
+        '/home': (context) => const HomeScreen(), // Main app shell
+      },
     );
   }
 }
@@ -40,13 +48,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _activeBody = const Home();
   String _activeTitle = 'RotNot';
 
-  // Function to switch screens
+  // Helper to swap screens and close drawer
   void _changeScreen(Widget newScreen, String newTitle) {
     setState(() {
       _activeBody = newScreen;
       _activeTitle = newTitle;
     });
-    Navigator.pop(context); // Closes the drawer
+    Navigator.pop(context);
   }
 
   @override
@@ -59,87 +67,53 @@ class _HomeScreenState extends State<HomeScreen> {
       drawer: Drawer(
         child: Column(
           children: [
-            // Header with Icon and App Name
             const DrawerHeader(
               decoration: BoxDecoration(color: Colors.teal),
               child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.eco_rounded, color: Colors.white, size: 48),
-                    SizedBox(height: 10),
-                    Text(
-                      'RotNot',
-                      style: TextStyle(
-                        color: Colors.white, 
-                        fontSize: 22, 
-                        fontWeight: FontWeight.bold
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'RotNot',
+                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
-            
-            // Scrollable Menu Items
+            // Navigation List
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
-                  _buildDrawerTile(
-                    title: 'Home', 
-                    icon: Icons.home_rounded, 
-                    screen: const Home()
-                  ),
-                  _buildDrawerTile(
-                    title: 'Food Detection', 
-                    icon: Icons.camera_rounded, 
-                    screen: const FoodDetectionScreen()
-                  ),
-                  _buildDrawerTile(
-                    title: 'Recipe', 
-                    icon: Icons.restaurant_menu_rounded, 
-                    screen: const RecipeScreen()
-                  ),
-                  _buildDrawerTile(
-                    title: 'Donation', 
-                    icon: Icons.volunteer_activism_rounded, 
-                    screen: const DonationScreen()
-                  ),
-                  _buildDrawerTile(
-                    title: 'Shelf', 
-                    icon: Icons.inventory_2_rounded, 
-                    screen: const ShelfScreen()
-                  ),
-                  _buildDrawerTile(
-                    title: 'Settings', 
-                    icon: Icons.settings_rounded, 
-                    screen: const SettingsScreen()
-                  ),
+                  _buildDrawerTile('Home', Icons.home_rounded, const Home()),
+                  _buildDrawerTile('Food Detection', Icons.camera_rounded, const FoodDetectionScreen()),
+                  _buildDrawerTile('Recipe', Icons.restaurant_menu_rounded, const RecipeScreen()),
+                  _buildDrawerTile('Donation', Icons.volunteer_activism_rounded, const DonationScreen()),
+                  _buildDrawerTile('Shelf', Icons.inventory_2_rounded, const ShelfScreen()),
+                  _buildDrawerTile('Settings', Icons.settings_rounded, const SettingsScreen()),
                 ],
               ),
             ),
-
-            // Footer Section
+            // Logout Footer
             const Divider(),
             ListTile(
               leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
               title: const Text('Logout', style: TextStyle(color: Colors.redAccent)),
               onTap: () {
-                // Add logout logic here later
-                Navigator.pop(context);
+                // Returns to login and clears the screen stack
+                Navigator.pushReplacementNamed(context, '/');
               },
             ),
             const SizedBox(height: 20),
           ],
         ),
       ),
-      body: _activeBody,
+      // SAFE AREA: Keeps UI above system navigation buttons (back, home, apps)
+      body: SafeArea(
+        bottom: true,
+        child: _activeBody,
+      ),
     );
   }
 
-  // Helper widget to keep the drawer code clean
-  Widget _buildDrawerTile({required String title, required IconData icon, required Widget screen}) {
+  // Custom tile builder to keep code clean
+  Widget _buildDrawerTile(String title, IconData icon, Widget screen) {
     return ListTile(
       leading: Icon(icon, color: Colors.teal),
       title: Text(title),
