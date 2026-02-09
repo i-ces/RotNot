@@ -16,11 +16,11 @@ class Home extends StatelessWidget {
 
     return Scaffold(
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20), // Adjusted vertical padding
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- 0. TOP NAVIGATION ROW (Menu & Notification) ---
+            // --- 0. TOP NAVIGATION ROW ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -62,15 +62,9 @@ class Home extends StatelessWidget {
               ],
             ),
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 35),
 
-            // --- 3. SAVINGS IMPACT CARD ---
-            const Text(
-              "Savings Impact",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 15),
-
+            // --- 3. SAVINGS IMPACT CARD (Redesigned) ---
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
@@ -96,21 +90,31 @@ class Home extends StatelessWidget {
                           color: accentGreen,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.trending_up_rounded, color: Colors.white, size: 20),
+                        child: const Icon(Icons.auto_graph_rounded, color: Colors.white, size: 20),
                       ),
                       const SizedBox(width: 12),
                       const Text(
-                        "Local Impact (Nepal)",
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        "Savings Impact",
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                   const SizedBox(height: 25),
                   Row(
                     children: [
-                      _buildImpactStat("MONEY SAVED", "रू 1,420", "+12% this week", accentGreen),
+                      _buildImpactStat(
+                        "MONEY SAVED", 
+                        "रू 1,420", 
+                        "+12% this week", 
+                        accentGreen
+                      ),
                       const SizedBox(width: 15),
-                      _buildImpactStat("CO2 AVOIDED", "18.4 kg", "CO₂e saved", const Color(0xFF64FFDA)),
+                      _buildImpactStat(
+                        "CO2 AVOIDED", 
+                        "18.4 kg", 
+                        "Total footprint reduction", 
+                        const Color(0xFF64FFDA)
+                      ),
                     ],
                   ),
                 ],
@@ -124,7 +128,6 @@ class Home extends StatelessWidget {
 
   // --- HELPER WIDGETS ---
 
-  // NEW: Integrated Menu Button
   Widget _buildMenuButton(BuildContext context) {
     return GestureDetector(
       onTap: () => Scaffold.of(context).openDrawer(),
@@ -206,7 +209,7 @@ class Home extends StatelessWidget {
           children: [
             Text(label, style: const TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
             const SizedBox(height: 8),
-            Text(value, style: TextStyle(color: color, fontSize: 20, fontWeight: FontWeight.bold)),
+            Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
             Text(subValue, style: TextStyle(color: color.withOpacity(0.5), fontSize: 10)),
           ],
