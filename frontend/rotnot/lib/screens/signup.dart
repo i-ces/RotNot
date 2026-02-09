@@ -155,6 +155,7 @@ class _SignUpPageState extends State<SignUpPage> {
     setState(() => _isLoading = true);
     try {
       final credential = await AuthService.signUp(email, password);
+      // Set display name
       await credential.user?.updateDisplayName(name);
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/home');

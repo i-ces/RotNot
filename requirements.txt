@@ -1,0 +1,3 @@
+# food detector requirements
+opencv-python
+ultralytics
