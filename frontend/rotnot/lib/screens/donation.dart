@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../main.dart';
+import '../services/location_service.dart';
 import 'shelf.dart';
 
 // ─── Food Bank model ────────────────────────────────────────────────────────
@@ -158,6 +159,33 @@ class _DonationScreenState extends State<DonationScreen> {
   FoodBank? _selectedBank;
   bool _showListView = true;
 
+  // Location state
+  double _userLat = LocationService.defaultLat;
+  double _userLng = LocationService.defaultLng;
+  bool _loadingLocation = true;
+  bool _locationDenied = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLocation();
+  }
+
+  Future<void> _fetchLocation() async {
+    final position = await LocationService.getCurrentLocation();
+    if (mounted) {
+      setState(() {
+        _loadingLocation = false;
+        if (position != null) {
+          _userLat = position.latitude;
+          _userLng = position.longitude;
+        } else {
+          _locationDenied = true;
+        }
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -275,9 +303,35 @@ class _DonationScreenState extends State<DonationScreen> {
   // ─── Real map with OpenStreetMap ──────────────────────────────────────────
 
   Widget _buildMapSection() {
-    // Center on Kathmandu
-    const userLat = 27.7000;
-    const userLng = 85.3333;
+    if (_loadingLocation) {
+      return Container(
+        height: 200,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: MyApp.surfaceColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white10),
+        ),
+        child: const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 28,
+                height: 28,
+                child: CircularProgressIndicator(
+                  color: MyApp.accentGreen,
+                  strokeWidth: 2.5,
+                ),
+              ),
+              SizedBox(height: 12),
+              Text('Getting your location…',
+                  style: TextStyle(color: Colors.white38, fontSize: 13)),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Container(
       height: 200,
@@ -291,7 +345,7 @@ class _DonationScreenState extends State<DonationScreen> {
         children: [
           FlutterMap(
             options: MapOptions(
-              initialCenter: const LatLng(userLat, userLng),
+              initialCenter: LatLng(_userLat, _userLng),
               initialZoom: 12.5,
             ),
             children: [
@@ -303,7 +357,7 @@ class _DonationScreenState extends State<DonationScreen> {
                 markers: [
                   // User location marker
                   Marker(
-                    point: const LatLng(userLat, userLng),
+                    point: LatLng(_userLat, _userLng),
                     width: 30,
                     height: 30,
                     child: Container(
@@ -360,7 +414,7 @@ class _DonationScreenState extends State<DonationScreen> {
               ),
             ],
           ),
-          // Legend
+          // Legend + location status
           Positioned(
             bottom: 8,
             left: 8,
@@ -383,7 +437,10 @@ class _DonationScreenState extends State<DonationScreen> {
                     ),
                   ),
                   const SizedBox(width: 5),
-                  Text('You', style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 11)),
+                  Text(
+                    _locationDenied ? 'Default location' : 'You',
+                    style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 11),
+                  ),
                   const SizedBox(width: 10),
                   Container(
                     width: 10,
@@ -400,6 +457,36 @@ class _DonationScreenState extends State<DonationScreen> {
               ),
             ),
           ),
+          // Retry button if location denied
+          if (_locationDenied)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _loadingLocation = true;
+                    _locationDenied = false;
+                  });
+                  _fetchLocation();
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: MyApp.scaffoldBg.withOpacity(0.85),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.my_location_rounded, size: 14, color: MyApp.accentGreen),
+                      const SizedBox(width: 5),
+                      Text('Use my location', style: TextStyle(color: MyApp.accentGreen, fontSize: 11, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
