@@ -85,7 +85,3 @@ donationSchema.index({ status: 1 });
 const Donation = mongoose.model<IDonation>('Donation', donationSchema);
 
 export default Donation;
-
-const Donation = mongoose.model<IDonation>('Donation', donationSchema);
-
-export default Donation;
