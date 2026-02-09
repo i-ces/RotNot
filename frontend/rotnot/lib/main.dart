@@ -58,12 +58,38 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(color: Colors.teal),
               child: Text('Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
             ),
-            ListTile(title: const Text('Home'), onTap: () => _changeScreen(const Home(), 'Home')),
-            ListTile(title: const Text('Food Detection'), onTap: () => _changeScreen(const FoodDetectionScreen(), 'Food Detection')),
-            ListTile(title: const Text('Recipe'), onTap: () => _changeScreen(const RecipeScreen(), 'Recipes')),
-            ListTile(title: const Text('Donation'), onTap: () => _changeScreen(const DonationScreen(), 'Donations')),
-            ListTile(title: const Text('Shelf'), onTap: () => _changeScreen(const ShelfScreen(), 'My Shelf')),
-            ListTile(title: const Text('Settings'), onTap: () => _changeScreen(const SettingsScreen(), 'Settings')),
+            // ... inside the Drawer ListView ...
+            ListTile(
+              leading: const Icon(Icons.home_rounded, color: Colors.teal),
+              title: const Text('Home'), 
+              onTap: () => _changeScreen(const Home(), 'Home')
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_rounded, color: Colors.teal),
+              title: const Text('Food Detection'), 
+              onTap: () => _changeScreen(const FoodDetectionScreen(), 'Food Detection')
+            ),
+            ListTile(
+              leading: const Icon(Icons.restaurant_menu_rounded, color: Colors.teal),
+              title: const Text('Recipe'), 
+              onTap: () => _changeScreen(const RecipeScreen(), 'Recipes')
+            ),
+            ListTile(
+              leading: const Icon(Icons.volunteer_activism_rounded, color: Colors.teal),
+              title: const Text('Donation'), 
+              onTap: () => _changeScreen(const DonationScreen(), 'Donations')
+            ),
+            ListTile(
+              leading: const Icon(Icons.inventory_2_rounded, color: Colors.teal),
+              title: const Text('Shelf'), 
+              onTap: () => _changeScreen(const ShelfScreen(), 'My Shelf')
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings_rounded, color: Colors.teal),
+              title: const Text('Settings'), 
+              onTap: () => _changeScreen(const SettingsScreen(), 'Settings')
+            ),
+// ...
           ],
         ),
       ),
