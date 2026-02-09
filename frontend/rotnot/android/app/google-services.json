@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "879614232778",
+    "project_id": "rotnot-5c0e7",
+    "storage_bucket": "rotnot-5c0e7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:879614232778:android:6617d7517711e0b9800c33",
+        "android_client_info": {
+          "package_name": "com.example.rotnot"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOUbhXsatLgh4HGA1R1EJXFx91EFmONvU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

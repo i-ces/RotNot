@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -10,6 +11,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
 
   static const Color scaffoldBg = Color(0xFF121212);
   static const Color surfaceColor = Color(0xFF1E1E1E);
@@ -31,13 +33,21 @@ class _LoginPageState extends State<LoginPage> {
                   height: 200,
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
-                    return const Icon(Icons.eco_rounded, size: 80, color: accentGreen);
+                    return const Icon(
+                      Icons.eco_rounded,
+                      size: 80,
+                      color: accentGreen,
+                    );
                   },
                 ),
                 const SizedBox(height: 24),
                 const Text(
                   "RotNot Login",
-                  style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 40),
                 TextField(
@@ -48,7 +58,10 @@ class _LoginPageState extends State<LoginPage> {
                     hintStyle: const TextStyle(color: Colors.white38),
                     filled: true,
                     fillColor: surfaceColor,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
                     prefixIcon: const Icon(Icons.email, color: accentGreen),
                   ),
                 ),
@@ -62,7 +75,10 @@ class _LoginPageState extends State<LoginPage> {
                     hintStyle: const TextStyle(color: Colors.white38),
                     filled: true,
                     fillColor: surfaceColor,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
                     prefixIcon: const Icon(Icons.lock, color: accentGreen),
                   ),
                 ),
@@ -70,7 +86,10 @@ class _LoginPageState extends State<LoginPage> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () => Navigator.pushNamed(context, '/forgotpw'),
-                    child: const Text("Forgot Password?", style: TextStyle(color: accentGreen)),
+                    child: const Text(
+                      "Forgot Password?",
+                      style: TextStyle(color: accentGreen),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -78,23 +97,49 @@ class _LoginPageState extends State<LoginPage> {
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
+                    onPressed: _isLoading ? null : _handleLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: accentGreen,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    child: const Text("LOGIN", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            "LOGIN",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("Don't have an account? ", style: TextStyle(color: Colors.white70)),
+                    const Text(
+                      "Don't have an account? ",
+                      style: TextStyle(color: Colors.white70),
+                    ),
                     GestureDetector(
                       onTap: () => Navigator.pushNamed(context, '/signup'),
-                      child: const Text("Sign Up", style: TextStyle(color: accentGreen, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        "Sign Up",
+                        style: TextStyle(
+                          color: accentGreen,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -104,5 +149,45 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      _showError('Please fill in all fields.');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await AuthService.login(email, password);
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/home');
+    } catch (e) {
+      _showError(_mapFirebaseError(e));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.redAccent),
+    );
+  }
+
+  String _mapFirebaseError(dynamic e) {
+    if (e is! Exception) return e.toString();
+    final msg = e.toString().toLowerCase();
+    if (msg.contains('user-not-found'))
+      return 'No account found with this email.';
+    if (msg.contains('wrong-password') || msg.contains('invalid-credential'))
+      return 'Incorrect password.';
+    if (msg.contains('invalid-email')) return 'Invalid email address.';
+    if (msg.contains('too-many-requests'))
+      return 'Too many attempts. Try again later.';
+    return 'Login failed. Please try again.';
   }
 }
