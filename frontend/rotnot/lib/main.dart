@@ -10,7 +10,8 @@ import 'screens/donation.dart';
 import 'screens/profile.dart'; 
 import 'screens/signup.dart';
 import 'screens/forgotpw.dart';
-import 'screens/settings.dart'; // Added this import
+import 'screens/settings.dart';
+import 'screens/help.dart'; // New Import
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -83,9 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey, 
-      
       drawer: _buildSidebar(context),
-
       body: SafeArea(
         child: Stack(
           children: [
@@ -161,16 +160,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 _drawerItem(Icons.history_rounded, "Donation History", () {}),
                 const Divider(color: Colors.white12, indent: 20, endIndent: 20),
                 
-                // --- CONNECTED SETTINGS ---
                 _drawerItem(Icons.settings_rounded, "Settings", () {
-                  Navigator.pop(context); // Close drawer
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const SettingsScreen()),
-                  );
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen()));
                 }),
                 
-                _drawerItem(Icons.help_outline_rounded, "Help & Support", () {}),
+                // --- CONNECTED HELP & SUPPORT ---
+                _drawerItem(Icons.help_outline_rounded, "Help & Support", () {
+                  Navigator.pop(context); // Close sidebar
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(builder: (context) => const HelpScreen())
+                  );
+                }),
               ],
             ),
           ),
