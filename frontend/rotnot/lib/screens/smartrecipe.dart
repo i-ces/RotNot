@@ -12,8 +12,8 @@ class _SmartRecipesPageState extends State<SmartRecipesPage> {
   static const Color accentOrange = Color(0xFFE67E22);
   static const Color surfaceColor = Color(0xFF1E1E1E);
 
-  // Track which items are selected
   final Map<int, bool> _selectedItems = {};
+  bool _isExpanded = false;
 
   final List<Map<String, String>> expiringItems = [
     {"name": "Spinach", "days": "1 day left"},
@@ -25,7 +25,6 @@ class _SmartRecipesPageState extends State<SmartRecipesPage> {
   @override
   void initState() {
     super.initState();
-    // Initialize all as unselected
     for (int i = 0; i < expiringItems.length; i++) {
       _selectedItems[i] = false;
     }
@@ -33,6 +32,8 @@ class _SmartRecipesPageState extends State<SmartRecipesPage> {
 
   @override
   Widget build(BuildContext context) {
+    int selectedCount = _selectedItems.values.where((v) => v).length;
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -41,154 +42,175 @@ class _SmartRecipesPageState extends State<SmartRecipesPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
+      // Use resizeToAvoidBottomInset to prevent the keyboard from breaking the UI
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
           SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 100), // Extra bottom padding for chatbox
+            // Extra bottom padding (140) so content doesn't get hidden behind the chatbox
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 140),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // --- SECTION 1: INGREDIENT SELECTION ---
-                const Text(
-                  "Select Ingredients",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  "Tick the items you want the AI to include in your recipe.",
-                  style: TextStyle(color: Colors.white60, fontSize: 14),
-                ),
-                const SizedBox(height: 20),
-
-                // THE INGREDIENT CHECKLIST
+                // --- SECTION 1: THE GIANT RECIPE HUB CONTAINER ---
                 Container(
                   decoration: BoxDecoration(
                     color: surfaceColor,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(30),
                     border: Border.all(color: Colors.white.withOpacity(0.05)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: accentGreen.withOpacity(0.05),
+                        blurRadius: 20,
+                        spreadRadius: 1,
+                      )
+                    ],
                   ),
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: expiringItems.length,
-                    separatorBuilder: (context, index) => Divider(
-                      color: Colors.white.withOpacity(0.05),
-                      height: 1,
-                    ),
-                    itemBuilder: (context, index) {
-                      final item = expiringItems[index];
-                      final isSelected = _selectedItems[index] ?? false;
-
-                      return CheckboxListTile(
-                        value: isSelected,
-                        onChanged: (bool? value) {
-                          setState(() {
-                            _selectedItems[index] = value ?? false;
-                          });
-                        },
-                        title: Text(
-                          item['name']!,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: isSelected ? accentGreen : Colors.white,
+                  child: Column(
+                    children: [
+                      // Expandable Dropbox
+                      Theme(
+                        data: Theme.of(context).copyWith(
+                          dividerColor: Colors.transparent,
+                          unselectedWidgetColor: Colors.white60,
+                        ),
+                        child: ExpansionTile(
+                          onExpansionChanged: (val) => setState(() => _isExpanded = val),
+                          title: const Text(
+                            "Select Ingredients",
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
+                          ),
+                          subtitle: Text(
+                            "$selectedCount items selected for rescue",
+                            style: TextStyle(
+                              color: selectedCount > 0 ? accentGreen : Colors.white38,
+                              fontSize: 13,
+                            ),
+                          ),
+                          leading: Icon(
+                            Icons.inventory_2_rounded,
+                            color: _isExpanded ? accentGreen : Colors.white60,
+                          ),
+                          trailing: Icon(
+                            _isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                            color: Colors.white38,
+                          ),
+                          children: [
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: expiringItems.length,
+                              itemBuilder: (context, index) {
+                                final item = expiringItems[index];
+                                final isSelected = _selectedItems[index] ?? false;
+                                return CheckboxListTile(
+                                  value: isSelected,
+                                  onChanged: (val) => setState(() => _selectedItems[index] = val!),
+                                  activeColor: accentGreen,
+                                  checkColor: Colors.black,
+                                  title: Text(
+                                    item['name']!,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: isSelected ? accentGreen : Colors.white,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    item['days']!,
+                                    style: const TextStyle(fontSize: 12, color: Colors.white38),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                        ),
+                      ),
+                      
+                      // Action Button within the same frame
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 55,
+                          child: ElevatedButton.icon(
+                            onPressed: selectedCount > 0 
+                                ? () => _showAILoader(context, "Mixing $selectedCount ingredients...") 
+                                : null,
+                            icon: const Icon(Icons.auto_fix_high_rounded),
+                            label: const Text("GENERATE FROM SELECTION", style: TextStyle(fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: accentGreen,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.white10,
+                              disabledForegroundColor: Colors.white24,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              elevation: 0,
+                            ),
                           ),
                         ),
-                        subtitle: Text(
-                          item['days']!,
-                          style: TextStyle(
-                            color: isSelected ? accentOrange : Colors.white38,
-                            fontSize: 12,
-                          ),
-                        ),
-                        secondary: Icon(
-                          Icons.timer_rounded,
-                          color: isSelected ? accentOrange : Colors.white24,
-                        ),
-                        activeColor: accentGreen,
-                        checkColor: Colors.black,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                      );
-                    },
+                      ),
+                    ],
                   ),
                 ),
 
-                const SizedBox(height: 25),
+                const SizedBox(height: 30),
 
-                // --- SECTION 2: SURPRISE ME (Now the primary action) ---
-                _buildActionCard(context),
+                // --- SECTION 2: SURPRISE ME BUTTON ---
+                const Padding(
+                  padding: EdgeInsets.only(left: 8.0),
+                  child: Text("Feeling Indecisive?", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                ),
+                const SizedBox(height: 12),
+                _buildSurpriseMeButton(),
 
                 const SizedBox(height: 40),
-
-                // --- SECTION 3: PANTRY INFO ---
-                const Text(
-                  "Need Inspiration?",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  "Type a question in the chat below, like 'What can I make with these for a quick lunch?'",
-                  style: TextStyle(color: Colors.white60, fontSize: 13),
+                const Center(
+                  child: Text(
+                    "AI Kitchen Assistant Active",
+                    style: TextStyle(color: Colors.white10, fontSize: 11, letterSpacing: 1.2, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
           ),
 
-          // --- SECTION 4: AI CHATBOX ---
+          // --- SECTION 3: REPOSITIONED AI CHATBOX ---
           _buildChatInput(),
         ],
       ),
     );
   }
 
-  // --- HELPER WIDGETS ---
-
-  Widget _buildActionCard(BuildContext context) {
-    int selectedCount = _selectedItems.values.where((v) => v).length;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [accentGreen.withOpacity(0.1), Colors.transparent],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+  Widget _buildSurpriseMeButton() {
+    return InkWell(
+      onTap: () => _showAILoader(context, "Scanning your whole shelf..."),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
         ),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: accentGreen.withOpacity(0.2)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.auto_awesome_rounded, color: accentGreen, size: 24),
-              const SizedBox(width: 10),
-              Text(
-                selectedCount > 0 ? "$selectedCount items selected" : "No items selected",
-                style: const TextStyle(color: accentGreen, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            height: 55,
-            child: ElevatedButton(
-              onPressed: () => _showAILoader(context, "Crafting recipe from your selection..."),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: accentGreen,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                elevation: 0,
-              ),
-              child: const Text(
-                "GENERATE SMART RECIPE",
-                style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.1),
+        child: const Row(
+          children: [
+            Icon(Icons.auto_awesome_rounded, color: accentOrange, size: 28),
+            SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Surprise Me", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+                  Text("Generate a random recipe from everything you have", 
+                    style: TextStyle(color: Colors.white38, fontSize: 12)),
+                ],
               ),
             ),
-          ),
-        ],
+            Icon(Icons.chevron_right_rounded, color: Colors.white24),
+          ],
+        ),
       ),
     );
   }
@@ -197,18 +219,22 @@ class _SmartRecipesPageState extends State<SmartRecipesPage> {
     return Align(
       alignment: Alignment.bottomCenter,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        // Added bottom padding to handle system navigation bars
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 25), 
         decoration: BoxDecoration(
           color: surfaceColor,
+          // Added a slight blur effect to the background of the chatbox
+          border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.5),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
+              color: Colors.black.withOpacity(0.4),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
             )
           ],
         ),
         child: SafeArea(
+          // SafeArea nested here further ensures it avoids "The Notch" or "The Bar"
           child: Row(
             children: [
               Expanded(
@@ -219,21 +245,22 @@ class _SmartRecipesPageState extends State<SmartRecipesPage> {
                     borderRadius: BorderRadius.circular(30),
                   ),
                   child: const TextField(
+                    style: TextStyle(color: Colors.white),
                     decoration: InputDecoration(
                       hintText: "Ask AI for recipe tips...",
                       hintStyle: TextStyle(color: Colors.white24, fontSize: 14),
                       border: InputBorder.none,
                     ),
-                    style: TextStyle(color: Colors.white),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               CircleAvatar(
                 backgroundColor: accentGreen,
+                radius: 24,
                 child: IconButton(
                   icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
-                  onPressed: () {}, // Future AI logic
+                  onPressed: () {},
                 ),
               ),
             ],
@@ -247,27 +274,21 @@ class _SmartRecipesPageState extends State<SmartRecipesPage> {
     showModalBottomSheet(
       context: context,
       backgroundColor: surfaceColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
       builder: (context) => Container(
-        height: 280,
+        height: 250,
         padding: const EdgeInsets.all(32),
         child: Column(
           children: [
-            const CircularProgressIndicator(color: accentGreen),
-            const SizedBox(height: 24),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            const LinearProgressIndicator(
+              backgroundColor: Colors.white10,
+              valueColor: AlwaysStoppedAnimation<Color>(accentGreen),
             ),
+            const SizedBox(height: 32),
+            Text(message, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white)),
             const SizedBox(height: 12),
-            const Text(
-              "Our AI is analyzing your selected ingredients to suggest the best Pokhara-style meal.",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white60, fontSize: 14, height: 1.5),
-            ),
+            const Text("Finding the best recipe for your ingredients...", 
+              textAlign: TextAlign.center, style: TextStyle(color: Colors.white60)),
           ],
         ),
       ),
