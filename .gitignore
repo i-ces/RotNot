@@ -52,3 +52,10 @@ Thumbs.db
 
 # backend
 /backend/node_modules
+
+# Generated plugin registrants
+linux/flutter/generated_plugin_registrant.*
+windows/flutter/generated_plugin_registrant.*
+windows/flutter/generated_plugins.cmake
+macos/Flutter/GeneratedPluginRegistrant.swift
+ios/Flutter/GeneratedPluginRegistrant.*
