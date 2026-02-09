@@ -10,10 +10,11 @@ import 'screens/donation.dart';
 import 'screens/profile.dart'; 
 import 'screens/signup.dart';
 import 'screens/forgotpw.dart';
+import 'screens/settings.dart';
+import 'screens/help.dart'; // New Import
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  // This makes the system bar transparent and allows our app to handle the padding
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     systemNavigationBarColor: Colors.transparent,
@@ -62,6 +63,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   bool _isSearchActive = false; 
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   List<Widget> get _pages => [
     const Home(),
@@ -81,54 +83,46 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 1. Body uses SafeArea to avoid the top "notch"/status bar
+      key: _scaffoldKey, 
+      drawer: _buildSidebar(context),
       body: SafeArea(
-        child: IndexedStack(
-          index: _selectedIndex,
-          children: _pages,
+        child: Stack(
+          children: [
+            IndexedStack(
+              index: _selectedIndex,
+              children: _pages,
+            ),
+            if (!_isSearchActive)
+              Positioned(
+                top: 10,
+                left: 10,
+                child: IconButton(
+                  icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 28),
+                  onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                ),
+              ),
+          ],
         ),
       ),
 
-      // 2. Adjusting the Floating Action Button Location
-      // We use a custom location or standard docked to keep it above the bar
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: AnimatedScale(
-        scale: _isSearchActive ? 0.0 : 1.0,
-        duration: const Duration(milliseconds: 200),
-        child: Container(
-          margin: const EdgeInsets.only(top: 10), // Prevents it from sitting too low
-          child: FloatingActionButton(
-            onPressed: _isSearchActive ? null : () => _onItemTapped(2), 
-            backgroundColor: MyApp.accentGreen,
-            elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 28),
-          ),
-        ),
-      ),
-
-      // 3. The Bottom Navigation Bar Fix
       bottomNavigationBar: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        // We use zero height when searching, otherwise let it fit naturally
         height: _isSearchActive ? 0 : null, 
         child: Wrap(
           children: [
-            // SafeArea here is the MAGIC. It automatically adds padding 
-            // specifically for the system navigation bar (back/home buttons).
             SafeArea(
               child: BottomAppBar(
                 color: MyApp.surfaceColor,
                 elevation: 0,
-                height: 70, // Standard height
-                notchMargin: 10,
-                shape: const CircularNotchedRectangle(),
+                padding: EdgeInsets.zero,
+                height: 80,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     _buildNavItem(0, Icons.home_rounded, "Home"),
                     _buildNavItem(1, Icons.inventory_2_rounded, "Shelf"),
-                    const SizedBox(width: 50), // Gap for the Camera FAB
+                    _buildCameraButton(),
                     _buildNavItem(3, Icons.volunteer_activism_rounded, "Donate"),
                     _buildNavItem(4, Icons.person_rounded, "Profile"),
                   ],
@@ -141,26 +135,113 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildSidebar(BuildContext context) {
+    return Drawer(
+      backgroundColor: MyApp.scaffoldBg,
+      child: Column(
+        children: [
+          UserAccountsDrawerHeader(
+            decoration: const BoxDecoration(color: MyApp.surfaceColor),
+            currentAccountPicture: const CircleAvatar(
+              backgroundColor: MyApp.accentGreen,
+              child: Icon(Icons.person, color: Colors.white, size: 40),
+            ),
+            accountName: const Text("Alex Johnson", style: TextStyle(fontWeight: FontWeight.bold)),
+            accountEmail: const Text("alex.j@example.com", style: TextStyle(color: Colors.white70)),
+          ),
+          
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                _drawerItem(Icons.analytics_rounded, "Waste Analytics", () {}),
+                _drawerItem(Icons.restaurant_menu_rounded, "Smart Recipes", () {}),
+                _drawerItem(Icons.notifications_active_rounded, "Expiry Alerts", () {}),
+                _drawerItem(Icons.history_rounded, "Donation History", () {}),
+                const Divider(color: Colors.white12, indent: 20, endIndent: 20),
+                
+                _drawerItem(Icons.settings_rounded, "Settings", () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen()));
+                }),
+                
+                // --- CONNECTED HELP & SUPPORT ---
+                _drawerItem(Icons.help_outline_rounded, "Help & Support", () {
+                  Navigator.pop(context); // Close sidebar
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(builder: (context) => const HelpScreen())
+                  );
+                }),
+              ],
+            ),
+          ),
+          
+          Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: _drawerItem(
+              Icons.logout_rounded, 
+              "Logout", 
+              () => Navigator.pushReplacementNamed(context, '/'),
+              color: Colors.redAccent
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _drawerItem(IconData icon, String title, VoidCallback onTap, {Color? color}) {
+    return ListTile(
+      leading: Icon(icon, color: color ?? Colors.white70, size: 24),
+      title: Text(title, style: TextStyle(color: color ?? Colors.white, fontSize: 15)),
+      onTap: onTap,
+      visualDensity: const VisualDensity(vertical: -2),
+    );
+  }
+
+  Widget _buildCameraButton() {
+    return GestureDetector(
+      onTap: () => _onItemTapped(2),
+      child: Container(
+        width: 54,
+        height: 54,
+        decoration: BoxDecoration(
+          color: MyApp.accentGreen,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: MyApp.accentGreen.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 28),
+      ),
+    );
+  }
+
   Widget _buildNavItem(int index, IconData icon, String label) {
     bool isSelected = _selectedIndex == index;
     return GestureDetector(
       onTap: () => _onItemTapped(index),
       behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: isSelected ? MyApp.accentGreen : Colors.white38, size: 24),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected ? MyApp.accentGreen : Colors.white38,
-            ),
-          )
-        ],
+      child: SizedBox(
+        width: 60,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: isSelected ? MyApp.accentGreen : Colors.white38, size: 24),
+            const SizedBox(height: 4),
+            Text(label, style: TextStyle(
+                fontSize: 10,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected ? MyApp.accentGreen : Colors.white38,
+            )),
+          ],
+        ),
       ),
     );
   }

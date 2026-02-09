@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'settings.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -11,18 +10,9 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        // Removed the spaces and settings icon for a cleaner look
         title: const Text("My Profile"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_rounded, color: accentGreen),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
-            },
-          ),
-        ],
+        centerTitle: true, 
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
@@ -108,7 +98,9 @@ class ProfilePage extends StatelessWidget {
         leading: Icon(icon, color: accentGreen, size: 22),
         title: Text(title, style: const TextStyle(fontSize: 15)),
         trailing: const Icon(Icons.chevron_right_rounded, color: Colors.white24),
-        onTap: () {},
+        onTap: () {
+          // Add navigation logic for these sub-sections later
+        },
       ),
     );
   }
