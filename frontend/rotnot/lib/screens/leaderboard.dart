@@ -9,9 +9,12 @@ class LeaderboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text("Community Leaderboard"),
+        title: const Text("Pokhara Eco-Leaderboard"),
+        centerTitle: true,
         elevation: 0,
+        backgroundColor: Colors.transparent,
       ),
       body: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -21,31 +24,30 @@ class LeaderboardPage extends StatelessWidget {
           bool isMe = rank == 24;
           bool isTopThree = rank <= 3;
           
-          // Data Logic for Institutions vs Individuals
           final entity = _getLeaderboardData(rank, isMe);
 
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isMe ? accentGreen.withOpacity(0.1) : surfaceColor,
+              color: isMe ? accentGreen.withOpacity(0.15) : surfaceColor,
               borderRadius: BorderRadius.circular(20),
-              border: isMe ? Border.all(color: accentGreen.withOpacity(0.5)) : null,
+              border: isMe ? Border.all(color: accentGreen.withOpacity(0.5), width: 2) : null,
+              boxShadow: isMe ? [
+                BoxShadow(color: accentGreen.withOpacity(0.1), blurRadius: 10, spreadRadius: 2)
+              ] : null,
             ),
             child: Row(
               children: [
-                // Rank Number/Icon
                 SizedBox(
                   width: 35,
                   child: isTopThree 
-                    ? Icon(_getTrophyIcon(rank), color: _getTrophyColor(rank), size: 22)
+                    ? Icon(_getTrophyIcon(rank), color: _getTrophyColor(rank), size: 24)
                     : Text("#$rank", style: const TextStyle(color: Colors.white38, fontWeight: FontWeight.bold)),
                 ),
                 const SizedBox(width: 10),
-                
-                // Entity Icon (Business vs Person)
                 CircleAvatar(
-                  radius: 20,
+                  radius: 22,
                   backgroundColor: entity['type'] == 'Individual' ? Colors.white10 : accentGreen.withOpacity(0.2),
                   child: Icon(
                     _getEntityIcon(entity['type']), 
@@ -54,8 +56,6 @@ class LeaderboardPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 15),
-                
-                // Name and Category Tag
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,11 +63,12 @@ class LeaderboardPage extends StatelessWidget {
                       Text(
                         entity['name'],
                         style: TextStyle(
+                          fontSize: 15,
                           fontWeight: isMe ? FontWeight.bold : FontWeight.w600,
                           color: isMe ? accentGreen : Colors.white,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
@@ -76,22 +77,32 @@ class LeaderboardPage extends StatelessWidget {
                         ),
                         child: Text(
                           entity['type'].toUpperCase(),
-                          style: TextStyle(fontSize: 8, color: isMe ? accentGreen : Colors.white38, letterSpacing: 0.5),
+                          style: TextStyle(
+                            fontSize: 9, 
+                            color: isMe ? accentGreen : Colors.white38, 
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                
-                // Impact Data
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
                       "${entity['weight']} kg",
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold, 
+                        fontSize: 16,
+                        color: isMe ? accentGreen : Colors.white
+                      ),
                     ),
-                    const Text("DONATED", style: TextStyle(fontSize: 8, color: Colors.white24)),
+                    const Text(
+                      "DONATED", 
+                      style: TextStyle(fontSize: 8, color: Colors.white24, fontWeight: FontWeight.bold)
+                    ),
                   ],
                 ),
               ],
@@ -102,32 +113,57 @@ class LeaderboardPage extends StatelessWidget {
     );
   }
 
-  // --- LOGIC HELPERS ---
+  // --- POKHARA-SPECIFIC HARDCODED DATA ---
 
   Map<String, dynamic> _getLeaderboardData(int rank, bool isMe) {
     if (isMe) {
-      return {'name': 'Alex (You)', 'type': 'Individual', 'weight': '14'};
+      return {'name': 'Alex (You)', 'type': 'Individual', 'weight': '14.2'};
     }
 
-    // Hardcoded high-performers for top ranks
-    switch (rank) {
-      case 1: return {'name': 'Hyatt Regency Kathmandu', 'type': 'Hotel', 'weight': '1,240'};
-      case 2: return {'name': 'The Everest Hotel', 'type': 'Hotel', 'weight': '980'};
-      case 3: return {'name': 'Bawarchi Catering', 'type': 'Catering', 'weight': '850'};
-      case 4: return {'name': 'Roadhouse Café', 'type': 'Restaurant', 'weight': '620'};
-      case 5: return {'name': 'Anish Prajapati', 'type': 'Individual', 'weight': '410'};
-      default:
-        return {
-          'name': 'User $rank', 
-          'type': rank % 3 == 0 ? 'Restaurant' : 'Individual', 
-          'weight': '${400 - (rank * 10)}'
-        };
+    // Top 10 Pokhara Institutions (Hotels, Catering, Restaurants)
+    final institutions = [
+      {'name': 'The Pavilions Himalayas', 'type': 'Hotel', 'weight': '1,210'},
+      {'name': 'Fishtail Lodge', 'type': 'Hotel', 'weight': '1,050'},
+      {'name': 'Temple Tree Resort', 'type': 'Hotel', 'weight': '920'},
+      {'name': 'Busy Bee Café Lakeside', 'type': 'Restaurant', 'weight': '840'},
+      {'name': 'Pokhara Grande', 'type': 'Hotel', 'weight': '780'},
+      {'name': 'Fresh Elements Restaurant', 'type': 'Restaurant', 'weight': '690'},
+      {'name': 'Saravana Catering Pokhara', 'type': 'Catering', 'weight': '580'},
+      {'name': 'Moondance Village', 'type': 'Restaurant', 'weight': '510'},
+      {'name': 'Lakeside Catering Services', 'type': 'Catering', 'weight': '465'},
+      {'name': 'Godfather\'s Pizzeria', 'type': 'Restaurant', 'weight': '420'},
+    ];
+
+    // Local Individual Eco-Warriors (Pokhara Based Names)
+    final individuals = [
+      'Sushant Gurung', 'Pema Lama', 'Binod Pokharel', 'Srijana Thapa', 
+      'Ramesh Baral', 'Deepak Gc', 'Anju Adhikari', 'Prabhat Ranabhat',
+      'Kushum Tulachan', 'Rajesh Pariyar', 'Anita Karki', 'Sagar Neupane', 
+      'Rupa Bhandari', 'Nirmal Chhetri', 'Sandesh Dhakal', 'Bina Shrestha',
+      'Sudip Gautam', 'Manisha Pun', 'Arjun Sigdel', 'Laxmi Bastola'
+    ];
+
+    if (rank <= 10) {
+      return institutions[rank - 1];
+    } else {
+      int individualIndex = (rank - 11) % individuals.length;
+      
+      // Pokhara-specific mid-tier businesses
+      if (rank == 15) return {'name': 'Byanjan Restaurant', 'type': 'Restaurant', 'weight': '280'};
+      if (rank == 20) return {'name': 'Krazy Gecko Lakeside', 'type': 'Restaurant', 'weight': '195'};
+      
+      double baseWeight = 390.0 - (rank * 11.5);
+      return {
+        'name': individuals[individualIndex],
+        'type': 'Individual',
+        'weight': baseWeight.toStringAsFixed(1)
+      };
     }
   }
 
   IconData _getEntityIcon(String type) {
     switch (type) {
-      case 'Hotel': return Icons.hotel_rounded;
+      case 'Hotel': return Icons.corporate_fare_rounded;
       case 'Catering': return Icons.outdoor_grill_rounded;
       case 'Restaurant': return Icons.restaurant_rounded;
       default: return Icons.person_rounded;
@@ -135,12 +171,13 @@ class LeaderboardPage extends StatelessWidget {
   }
 
   IconData _getTrophyIcon(int rank) {
-    return rank == 1 ? Icons.workspace_premium : Icons.emoji_events;
+    if (rank == 1) return Icons.workspace_premium_rounded;
+    return Icons.emoji_events_rounded;
   }
 
   Color _getTrophyColor(int rank) {
     if (rank == 1) return const Color(0xFFFFD700);
-    if (rank == 2) return const Color(0xFFC0C0C0);
+    if (rank == 2) return const Color(0xFFC2C2C2);
     return const Color(0xFFCD7F32);
   }
 }
