@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../main.dart';
 import 'shelf.dart';
 
@@ -13,6 +15,8 @@ class FoodBank {
   final String? openUntil;
   final FoodBankType type;
   final String address;
+  final double lat;
+  final double lng;
 
   const FoodBank({
     required this.id,
@@ -21,6 +25,8 @@ class FoodBank {
     this.openUntil,
     required this.type,
     required this.address,
+    required this.lat,
+    required this.lng,
   });
 
   String get typeLabel {
@@ -56,6 +62,8 @@ const _sampleFoodBanks = <FoodBank>[
     openUntil: '8:00 PM',
     type: FoodBankType.community,
     address: 'Thamel, Kathmandu',
+    lat: 27.7172,
+    lng: 85.3240,
   ),
   FoodBank(
     id: '2',
@@ -64,6 +72,8 @@ const _sampleFoodBanks = <FoodBank>[
     openUntil: '6:00 PM',
     type: FoodBankType.charity,
     address: 'Mangalbazar, Lalitpur',
+    lat: 27.6727,
+    lng: 85.3286,
   ),
   FoodBank(
     id: '3',
@@ -72,6 +82,8 @@ const _sampleFoodBanks = <FoodBank>[
     openUntil: '9:00 PM',
     type: FoodBankType.shelter,
     address: 'Durbar Square, Bhaktapur',
+    lat: 27.6722,
+    lng: 85.4298,
   ),
   FoodBank(
     id: '4',
@@ -80,6 +92,8 @@ const _sampleFoodBanks = <FoodBank>[
     openUntil: '5:00 PM',
     type: FoodBankType.community,
     address: 'Balaju, Kathmandu',
+    lat: 27.7350,
+    lng: 85.3050,
   ),
 ];
 
@@ -156,37 +170,18 @@ class _DonationScreenState extends State<DonationScreen> {
           const SizedBox(height: 24),
 
           // ── Nearby Food Banks header ──
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Nearby Food Banks',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              // List / Grid toggle
-              Container(
-                decoration: BoxDecoration(
-                  color: MyApp.surfaceColor,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    _viewToggle(Icons.view_list_rounded, true),
-                    _viewToggle(Icons.grid_view_rounded, false),
-                  ],
-                ),
-              ),
-            ],
+          const Text(
+            'Nearby Food Banks',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 12),
 
-          // ── Map placeholder ──
-          _buildMapPlaceholder(),
+          // ── Map ──
+          _buildMapSection(),
           const SizedBox(height: 16),
 
           // ── Food bank list ──
@@ -277,52 +272,100 @@ class _DonationScreenState extends State<DonationScreen> {
     );
   }
 
-  // ─── Map placeholder ─────────────────────────────────────────────────────
+  // ─── Real map with OpenStreetMap ──────────────────────────────────────────
 
-  Widget _buildMapPlaceholder() {
+  Widget _buildMapSection() {
+    // Center on Kathmandu
+    const userLat = 27.7000;
+    const userLng = 85.3333;
+
     return Container(
-      height: 150,
+      height: 200,
       width: double.infinity,
       decoration: BoxDecoration(
-        color: MyApp.surfaceColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white10),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          // Grid pattern to simulate a map
-          ClipRRect(
-            borderRadius: BorderRadius.circular(15),
-            child: CustomPaint(
-              size: const Size(double.infinity, 150),
-              painter: _MapGridPainter(),
+          FlutterMap(
+            options: MapOptions(
+              initialCenter: const LatLng(userLat, userLng),
+              initialZoom: 12.5,
             ),
-          ),
-          // Center pin
-          Center(
-            child: Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                color: MyApp.accentGreen,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: MyApp.accentGreen.withOpacity(0.4),
-                    blurRadius: 10,
-                    spreadRadius: 2,
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.rotnot.app',
+              ),
+              MarkerLayer(
+                markers: [
+                  // User location marker
+                  Marker(
+                    point: const LatLng(userLat, userLng),
+                    width: 30,
+                    height: 30,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.blue,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blue.withOpacity(0.4),
+                            blurRadius: 8,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.person, color: Colors.white, size: 14),
+                    ),
                   ),
+                  // Food bank markers
+                  ..._sampleFoodBanks.map((bank) => Marker(
+                        point: LatLng(bank.lat, bank.lng),
+                        width: 36,
+                        height: 36,
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() => _selectedBank = bank);
+                            _showItemSelectionSheet(bank);
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: bank.typeColor,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: bank.typeColor.withOpacity(0.4),
+                                  blurRadius: 6,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.food_bank_rounded,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      )),
                 ],
               ),
-            ),
+            ],
           ),
-          // Label
+          // Legend
           Positioned(
-            bottom: 10,
-            left: 12,
+            bottom: 8,
+            left: 8,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: MyApp.scaffoldBg.withOpacity(0.85),
                 borderRadius: BorderRadius.circular(8),
@@ -330,14 +373,29 @@ class _DonationScreenState extends State<DonationScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.location_on_rounded,
-                      size: 14, color: MyApp.accentGreen),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Your location',
-                    style: TextStyle(
-                        color: Colors.white.withOpacity(0.7), fontSize: 11),
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1),
+                    ),
                   ),
+                  const SizedBox(width: 5),
+                  Text('You', style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 11)),
+                  const SizedBox(width: 10),
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: MyApp.accentGreen,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1),
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  Text('Food Banks', style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 11)),
                 ],
               ),
             ),
@@ -829,25 +887,4 @@ class _DonationScreenState extends State<DonationScreen> {
   }
 }
 
-// ─── Map grid painter (placeholder for real map) ────────────────────────────
 
-class _MapGridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withOpacity(0.04)
-      ..strokeWidth = 0.5;
-
-    // Horizontal lines
-    for (double y = 0; y < size.height; y += 20) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-    // Vertical lines
-    for (double x = 0; x < size.width; x += 20) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

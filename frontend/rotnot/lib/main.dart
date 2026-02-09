@@ -11,7 +11,8 @@ import 'screens/profile.dart';
 import 'screens/signup.dart';
 import 'screens/forgotpw.dart';
 import 'screens/settings.dart';
-import 'screens/help.dart'; // New Import
+import 'screens/help.dart';
+import 'screens/smartrecipe.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -104,7 +105,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-
       bottomNavigationBar: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         height: _isSearchActive ? 0 : null, 
@@ -149,34 +149,29 @@ class _HomeScreenState extends State<HomeScreen> {
             accountName: const Text("Alex Johnson", style: TextStyle(fontWeight: FontWeight.bold)),
             accountEmail: const Text("alex.j@example.com", style: TextStyle(color: Colors.white70)),
           ),
-          
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
                 _drawerItem(Icons.analytics_rounded, "Waste Analytics", () {}),
-                _drawerItem(Icons.restaurant_menu_rounded, "Smart Recipes", () {}),
+                _drawerItem(Icons.restaurant_menu_rounded, "Smart Recipes", () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const SmartRecipesScreen()));
+                }),
                 _drawerItem(Icons.notifications_active_rounded, "Expiry Alerts", () {}),
                 _drawerItem(Icons.history_rounded, "Donation History", () {}),
                 const Divider(color: Colors.white12, indent: 20, endIndent: 20),
-                
                 _drawerItem(Icons.settings_rounded, "Settings", () {
                   Navigator.pop(context);
                   Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen()));
                 }),
-                
-                // --- CONNECTED HELP & SUPPORT ---
                 _drawerItem(Icons.help_outline_rounded, "Help & Support", () {
-                  Navigator.pop(context); // Close sidebar
-                  Navigator.push(
-                    context, 
-                    MaterialPageRoute(builder: (context) => const HelpScreen())
-                  );
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const HelpScreen()));
                 }),
               ],
             ),
           ),
-          
           Padding(
             padding: const EdgeInsets.only(bottom: 20),
             child: _drawerItem(
