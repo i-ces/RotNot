@@ -1,0 +1,51 @@
+# Dart build files
+.dart_tool/
+.packages
+build/
+.pub/
+pubspec.lock
+
+
+# Environment
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+
+# Notebooks
+.ipynb_checkpoints/
+notebooks/*.ipynb_checkpoints/
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+frontend/node_modules/
+
+.cache/
+*.bin
+*.safetensors
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.temp/
+tmp/
+
+# Python build artifacts
+*.egg-info/
+dist/
+build/
+*.egg
+
+# OS files
+.DS_Store
+Thumbs.db
