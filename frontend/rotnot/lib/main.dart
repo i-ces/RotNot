@@ -65,11 +65,19 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  bool _isSearchActive = false; // Tracks if the shelf search bar is open
 
-  final List<Widget> _pages = [
+  // We use a getter for pages so it can react to the _isSearchActive state
+  List<Widget> get _pages => [
     const Home(),
-    const ShelfScreen(),        
-    const FoodDetectionScreen(), 
+    ShelfScreen(
+      onSearchToggle: (bool isActive) {
+        setState(() {
+          _isSearchActive = isActive;
+        });
+      },
+    ),
+    const FoodDetectionScreen(),
     const DonationScreen(),
     const ProfilePage(),
   ];
@@ -77,6 +85,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+      // If we navigate away from Shelf, ensure search mode is reset
+      if (index != 1) {
+        _isSearchActive = false;
+      }
     });
   }
 
@@ -88,36 +100,44 @@ class _HomeScreenState extends State<HomeScreen> {
         children: _pages,
       ),
 
-      // --- ADJUSTED CAMERA BUTTON ---
-      // Removed centerDocked location to allow it to sit naturally
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(top: 30), // Minimal padding to nudge it into the bar
-        child: FloatingActionButton(
-          onPressed: () => _onItemTapped(2), 
-          backgroundColor: MyApp.accentGreen,
-          elevation: 2, // Lower elevation makes it look more "part of the bar"
-          child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 24),
+      // --- DYNAMIC CAMERA BUTTON ---
+      // We use AnimatedScale so it disappears gracefully
+      floatingActionButton: AnimatedScale(
+        scale: _isSearchActive ? 0.0 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        child: Padding(
+          padding: const EdgeInsets.only(top: 30), 
+          child: FloatingActionButton(
+            onPressed: _isSearchActive ? null : () => _onItemTapped(2), 
+            backgroundColor: MyApp.accentGreen,
+            elevation: 2,
+            child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 24),
+          ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
-      // --- BOTTOM NAVIGATION BAR ---
-      bottomNavigationBar: BottomAppBar(
-        color: MyApp.surfaceColor,
-        // Removed CircularNotchedRectangle to flatten the bar
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        height: 70, 
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+      // --- DYNAMIC BOTTOM NAVIGATION BAR ---
+      bottomNavigationBar: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: _isSearchActive ? 0 : 70, // Shrinks the bar to 0 when searching
+        child: Wrap( // Wrap prevents overflow errors when height is 0
           children: [
-            _buildNavItem(0, Icons.home_rounded, "Home"),
-            _buildNavItem(1, Icons.inventory_2_rounded, "Shelf"),
-            
-            // This is the gap where the FAB sits
-            const SizedBox(width: 48), 
-            
-            _buildNavItem(3, Icons.volunteer_activism_rounded, "Donate"),
-            _buildNavItem(4, Icons.person_rounded, "Profile"),
+            BottomAppBar(
+              color: MyApp.surfaceColor,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              height: 70, 
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildNavItem(0, Icons.home_rounded, "Home"),
+                  _buildNavItem(1, Icons.inventory_2_rounded, "Shelf"),
+                  const SizedBox(width: 48), 
+                  _buildNavItem(3, Icons.volunteer_activism_rounded, "Donate"),
+                  _buildNavItem(4, Icons.person_rounded, "Profile"),
+                ],
+              ),
+            ),
           ],
         ),
       ),

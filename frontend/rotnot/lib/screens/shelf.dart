@@ -159,7 +159,10 @@ List<FoodItem> _sampleItems() {
 // ─── Shelf Screen ─────────────────────────────────────────────────────────────
 
 class ShelfScreen extends StatefulWidget {
-  const ShelfScreen({super.key});
+  // Callback to notify main.dart about search status
+  final Function(bool) onSearchToggle;
+
+  const ShelfScreen({super.key, required this.onSearchToggle});
 
   @override
   State<ShelfScreen> createState() => _ShelfScreenState();
@@ -170,17 +173,24 @@ class _ShelfScreenState extends State<ShelfScreen>
   late TabController _tabController;
   late List<FoodItem> _items;
   String _searchQuery = '';
+  final FocusNode _searchFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _items = _sampleItems();
+
+    // Listen to focus changes to hide/show FAB in main.dart
+    _searchFocusNode.addListener(() {
+      widget.onSearchToggle(_searchFocusNode.hasFocus);
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -237,10 +247,11 @@ class _ShelfScreenState extends State<ShelfScreen>
       children: [
         // ── Search bar (With SafeArea and increased padding) ──
         SafeArea(
-          bottom: false, // We only care about the top notch/status bar
+          bottom: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 32, 16, 4),
             child: TextField(
+              focusNode: _searchFocusNode,
               onChanged: (v) => setState(() => _searchQuery = v),
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
@@ -303,78 +314,29 @@ class _ShelfScreenState extends State<ShelfScreen>
           ),
         ),
 
-        // ── Add button ──
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-          child: SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton.icon(
-              onPressed: () => _showAddItemSheet(context),
-              icon: const Icon(Icons.add_rounded, size: 22),
-              label: const Text('Add Item',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: MyApp.accentGreen,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-                elevation: 0,
+        // ── Add button (Hide if searching to keep UI clean) ──
+        if (!_searchFocusNode.hasFocus)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton.icon(
+                onPressed: () => _showAddItemSheet(context),
+                icon: const Icon(Icons.add_rounded, size: 22),
+                label: const Text('Add Item',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: MyApp.accentGreen,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
               ),
             ),
           ),
-        ),
       ],
-    );
-  }
-
-  // ─── Summary row (Note: Not called in main build, but keeping it) ──────────
-
-  Widget _buildSummaryRow() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: Row(
-        children: [
-          _summaryCard('Fresh', _freshCount, const Color(0xFF2ECC71),
-              Icons.check_circle_outline_rounded),
-          const SizedBox(width: 10),
-          _summaryCard('Expiring', _expiringCount, const Color(0xFFF39C12),
-              Icons.warning_amber_rounded),
-          const SizedBox(width: 10),
-          _summaryCard('Expired', _expiredCount, const Color(0xFFE74C3C),
-              Icons.cancel_outlined),
-        ],
-      ),
-    );
-  }
-
-  Widget _summaryCard(String label, int count, Color color, IconData icon) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.10),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.25)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 6),
-            Text(
-              '$count',
-              style: TextStyle(
-                  color: color, fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 2),
-            Text(label,
-                style: TextStyle(
-                    color: color.withOpacity(0.8),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500)),
-          ],
-        ),
-      ),
     );
   }
 
@@ -475,7 +437,6 @@ class _ShelfScreenState extends State<ShelfScreen>
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Handle bar
                     Center(
                       child: Container(
                         width: 40,
@@ -487,19 +448,14 @@ class _ShelfScreenState extends State<ShelfScreen>
                         ),
                       ),
                     ),
-
                     const Text('Add Food Item',
                         style: TextStyle(
                             color: Colors.white,
                             fontSize: 20,
                             fontWeight: FontWeight.bold)),
                     const SizedBox(height: 20),
-
-                    // Name
                     _sheetTextField(nameCtrl, 'Item name', Icons.label_rounded),
                     const SizedBox(height: 14),
-
-                    // Quantity + Unit
                     Row(
                       children: [
                         Expanded(
@@ -513,8 +469,6 @@ class _ShelfScreenState extends State<ShelfScreen>
                       ],
                     ),
                     const SizedBox(height: 14),
-
-                    // Expiry date picker
                     GestureDetector(
                       onTap: () async {
                         final picked = await showDatePicker(
@@ -563,13 +517,9 @@ class _ShelfScreenState extends State<ShelfScreen>
                       ),
                     ),
                     const SizedBox(height: 14),
-
-                    // Notes
                     _sheetTextField(
                         notesCtrl, 'Notes (optional)', Icons.notes_rounded),
                     const SizedBox(height: 24),
-
-                    // Save button
                     SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -667,7 +617,6 @@ class _FoodItemCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Status icon
             Container(
               width: 46,
               height: 46,
@@ -678,8 +627,6 @@ class _FoodItemCard extends StatelessWidget {
               child: Icon(Icons.fastfood_rounded, color: item.statusColor, size: 24),
             ),
             const SizedBox(width: 14),
-
-            // Details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -724,8 +671,6 @@ class _FoodItemCard extends StatelessWidget {
                 ],
               ),
             ),
-
-            // Delete
             IconButton(
               icon: Icon(Icons.delete_outline_rounded,
                   color: Colors.white.withOpacity(0.25), size: 20),
@@ -771,7 +716,6 @@ class _ItemDetailSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle
           Container(
             width: 40,
             height: 4,
@@ -781,8 +725,6 @@ class _ItemDetailSheet extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
             ),
           ),
-
-          // Icon + name
           Container(
             width: 64,
             height: 64,
@@ -812,8 +754,6 @@ class _ItemDetailSheet extends StatelessWidget {
                     fontWeight: FontWeight.w600)),
           ),
           const SizedBox(height: 24),
-
-          // Info rows
           _detailRow(Icons.inventory_2_outlined, 'Quantity',
               '${item.quantity} ${item.unit}'),
           _detailRow(Icons.calendar_today_rounded, 'Added on',
