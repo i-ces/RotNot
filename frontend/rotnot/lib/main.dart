@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-
-// Your screen imports
 import 'screens/login.dart';
 import 'screens/home.dart';
 import 'screens/food_detection.dart';
@@ -8,6 +6,8 @@ import 'screens/recipe.dart';
 import 'screens/donation.dart';
 import 'screens/shelf.dart';
 import 'screens/settings.dart';
+import 'screens/signup.dart';      // New Import
+import 'screens/forgotpw.dart';    // New Import
 
 void main() {
   runApp(const MyApp());
@@ -16,25 +16,46 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  static const Color scaffoldBg = Color(0xFF121212);    
+  static const Color surfaceColor = Color(0xFF1E1E1E); 
+  static const Color accentGreen = Color(0xFF2ECC71);  
+  static const Color appBarColor = Color(0xFF1A1A1A);  
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'RotNot',
-      // The theme is set to dark globally here
       theme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0D0000),
+        scaffoldBackgroundColor: scaffoldBg,
+        primaryColor: accentGreen,
+        fontFamily: 'Roboto',
+        appBarTheme: const AppBarTheme(
+          backgroundColor: appBarColor,
+          elevation: 0,
+          centerTitle: false,
+          iconTheme: IconThemeData(color: accentGreen),
+          titleTextStyle: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
+          ),
+        ),
       ),
-      // --- ROUTE NAVIGATION SETUP ---
       initialRoute: '/',
       routes: {
-        '/': (context) => const LoginPage(),    // Starting screen
-        '/home': (context) => const HomeScreen(), // Main app shell
+        '/': (context) => const LoginPage(),
+        '/signup': (context) => const SignUpPage(),
+        '/forgotpw': (context) => const ForgotPasswordPage(),
+        '/home': (context) => const HomeScreen(),
       },
     );
   }
 }
+
+// ... Keep your existing HomeScreen and _HomeScreenState exactly as they are ...
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -44,15 +65,15 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Navigation State
-  Widget _activeBody = const Home();
-  String _activeTitle = 'RotNot';
+  Widget _activeBody = const Home(); 
+  String _activeTitle = 'Home';
+  IconData _activeIcon = Icons.home_rounded;
 
-  // Helper to swap screens and close drawer
-  void _changeScreen(Widget newScreen, String newTitle) {
+  void _changeScreen(Widget newScreen, String newTitle, IconData newIcon) {
     setState(() {
       _activeBody = newScreen;
       _activeTitle = newTitle;
+      _activeIcon = newIcon;
     });
     Navigator.pop(context);
   }
@@ -61,25 +82,52 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_activeTitle),
-        backgroundColor: Colors.teal,
+        title: Row(
+          children: [
+            Icon(_activeIcon, color: MyApp.accentGreen, size: 22),
+            const SizedBox(width: 12),
+            Text(_activeTitle == 'Home' ? 'RotNot' : _activeTitle),
+          ],
+        ),
       ),
       drawer: Drawer(
+        backgroundColor: MyApp.surfaceColor,
         child: Column(
           children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.teal),
-              child: Center(
-                child: Text(
-                  'RotNot',
-                  style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                ),
+            // --- LOGO IN DRAWER HEADER ---
+            Container(
+              height: 160,
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: MyApp.appBarColor,
+                border: Border(bottom: BorderSide(color: Colors.white10, width: 1)),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    'assets/images/logo.png',
+                    height: 60,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(Icons.eco_rounded, color: MyApp.accentGreen, size: 50);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    "ROTNOT",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ],
               ),
             ),
-            // Navigation List
+            
             Expanded(
               child: ListView(
-                padding: EdgeInsets.zero,
+                padding: const EdgeInsets.symmetric(vertical: 10),
                 children: [
                   _buildDrawerTile('Home', Icons.home_rounded, const Home()),
                   _buildDrawerTile('Food Detection', Icons.camera_rounded, const FoodDetectionScreen()),
@@ -90,21 +138,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            // Logout Footer
-            const Divider(),
+
+            const Divider(color: Colors.white10),
             ListTile(
               leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
               title: const Text('Logout', style: TextStyle(color: Colors.redAccent)),
-              onTap: () {
-                // Returns to login and clears the screen stack
-                Navigator.pushReplacementNamed(context, '/');
-              },
+              onTap: () => Navigator.pushReplacementNamed(context, '/'),
             ),
             const SizedBox(height: 20),
           ],
         ),
       ),
-      // SAFE AREA: Keeps UI above system navigation buttons (back, home, apps)
       body: SafeArea(
         bottom: true,
         child: _activeBody,
@@ -112,12 +156,30 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Custom tile builder to keep code clean
   Widget _buildDrawerTile(String title, IconData icon, Widget screen) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.teal),
-      title: Text(title),
-      onTap: () => _changeScreen(screen, title == 'Home' ? 'RotNot' : title),
+    bool isSelected = (_activeTitle == title);
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: isSelected ? MyApp.accentGreen.withOpacity(0.15) : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        leading: Icon(
+          icon, 
+          color: isSelected ? MyApp.accentGreen : Colors.white60,
+          size: 22,
+        ),
+        title: Text(
+          title, 
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.white60,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          )
+        ),
+        onTap: () => _changeScreen(screen, title, icon),
+      ),
     );
   }
 }
