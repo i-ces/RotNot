@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -19,7 +20,10 @@ import 'screens/smartrecipe.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  // Firebase is not supported on Linux/Windows/macOS desktop
+  if (!Platform.isLinux && !Platform.isWindows && !Platform.isMacOS) {
+    await Firebase.initializeApp();
+  }
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -65,6 +69,11 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Firebase not available on desktop — skip auth
+    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+      return const HomeScreen();
+    }
+
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
