@@ -13,11 +13,12 @@ const startServer = async () => {
     // Start background cron jobs
     startExpiryCheckCron();
 
-    // Start Express server
-    const server = app.listen(config.port, () => {
+    // Start Express server - Listen on all network interfaces for physical device access
+    const server = app.listen(config.port, '0.0.0.0', () => {
       logger.info(`🚀 RotNot API server running on port ${config.port}`);
       logger.info(`📝 Environment: ${config.nodeEnv}`);
       logger.info(`🔗 Health check: http://localhost:${config.port}/api/health`);
+      logger.info(`📱 Network access: http://192.168.17.100:${config.port}/api/health`);
     });
 
     // Graceful shutdown
@@ -62,9 +63,6 @@ const startServer = async () => {
     process.exit(1);
   }
 };
-
-// Start the server
-startServer();
 
 // Start the server
 startServer();

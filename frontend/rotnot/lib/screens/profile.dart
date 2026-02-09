@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:rotnot/services/auth_service.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -8,11 +9,15 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = AuthService.currentUser;
+    final displayName = user?.displayName ?? 'User';
+    final email = user?.email ?? '';
+
     return Scaffold(
       appBar: AppBar(
         // Removed the spaces and settings icon for a cleaner look
         title: const Text("My Profile"),
-        centerTitle: true, 
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
@@ -27,17 +32,26 @@ class ProfilePage extends StatelessWidget {
                     child: CircleAvatar(
                       radius: 51,
                       backgroundColor: Color(0xFF121212),
-                      child: Icon(Icons.person_rounded, size: 60, color: Colors.white),
+                      child: Icon(
+                        Icons.person_rounded,
+                        size: 60,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
-              "Alex Thompson",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            Text(
+              displayName,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
+            Text(
+              email,
+              style: const TextStyle(color: Colors.white60, fontSize: 14),
+            ),
+            const SizedBox(height: 8),
             const Text(
               "Eco-Warrior Level 4",
               style: TextStyle(color: accentGreen, fontWeight: FontWeight.w500),
@@ -77,8 +91,14 @@ class ProfilePage extends StatelessWidget {
   Widget _buildStatColumn(String value, String label) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        Text(label, style: const TextStyle(fontSize: 11, color: Colors.white38)),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: Colors.white38),
+        ),
       ],
     );
   }
@@ -97,7 +117,10 @@ class ProfilePage extends StatelessWidget {
       child: ListTile(
         leading: Icon(icon, color: accentGreen, size: 22),
         title: Text(title, style: const TextStyle(fontSize: 15)),
-        trailing: const Icon(Icons.chevron_right_rounded, color: Colors.white24),
+        trailing: const Icon(
+          Icons.chevron_right_rounded,
+          color: Colors.white24,
+        ),
         onTap: () {
           // Add navigation logic for these sub-sections later
         },

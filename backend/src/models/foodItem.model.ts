@@ -4,6 +4,8 @@ export enum FoodStatus {
   FRESH = 'fresh',
   EXPIRING = 'expiring',
   EXPIRED = 'expired',
+  DONATED = 'donated',
+  CONSUMED = 'consumed',
 }
 
 export interface IFoodItem extends Document {

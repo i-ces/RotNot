@@ -1,73 +1,76 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export enum DonorType {
-  HOSTEL = 'hostel',
-  RESTAURANT = 'restaurant',
-  EVENT = 'event',
-}
-
 export enum DonationStatus {
-  AVAILABLE = 'available',
-  CLAIMED = 'claimed',
+  PENDING = 'pending',
+  SCHEDULED = 'scheduled',
+  PICKED_UP = 'picked_up',
   COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
 }
 
 export interface IDonation extends Document {
-  foodName: string;
-  quantity: string;
-  preparedAt: Date;
-  expiryTime: Date;
-  donorType: DonorType;
-  location: string;
+  donorId: string; // Firebase UID
+  foodBankId: mongoose.Types.ObjectId;
+  foodItems: Array<{
+    foodItemId: mongoose.Types.ObjectId;
+    name: string;
+    quantity: number;
+    unit: string;
+  }>;
   status: DonationStatus;
-  donorId: string;
-  claimedBy?: string;
+  pickupScheduledAt?: Date;
+  pickupCompletedAt?: Date;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const donationSchema = new Schema<IDonation>(
   {
-    foodName: {
-      type: String,
-      required: [true, 'Food name is required'],
-      trim: true,
-    },
-    quantity: {
-      type: String,
-      required: [true, 'Quantity is required'],
-      trim: true,
-    },
-    preparedAt: {
-      type: Date,
-      required: [true, 'Prepared at time is required'],
-    },
-    expiryTime: {
-      type: Date,
-      required: [true, 'Expiry time is required'],
-    },
-    donorType: {
-      type: String,
-      required: [true, 'Donor type is required'],
-      enum: Object.values(DonorType),
-    },
-    location: {
-      type: String,
-      required: [true, 'Location is required'],
-      trim: true,
-    },
-    status: {
-      type: String,
-      enum: Object.values(DonationStatus),
-      default: DonationStatus.AVAILABLE,
-    },
     donorId: {
       type: String,
       required: [true, 'Donor ID is required'],
       index: true,
     },
-    claimedBy: {
+    foodBankId: {
+      type: Schema.Types.ObjectId,
+      ref: 'FoodBank',
+      required: [true, 'Food bank ID is required'],
+    },
+    foodItems: [
+      {
+        foodItemId: {
+          type: Schema.Types.ObjectId,
+          ref: 'FoodItem',
+          required: true,
+        },
+        name: {
+          type: String,
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+        },
+        unit: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
+    status: {
       type: String,
-      default: null,
-      index: true,
+      enum: Object.values(DonationStatus),
+      default: DonationStatus.PENDING,
+    },
+    pickupScheduledAt: {
+      type: Date,
+    },
+    pickupCompletedAt: {
+      type: Date,
+    },
+    notes: {
+      type: String,
     },
   },
   {
@@ -77,9 +80,7 @@ const donationSchema = new Schema<IDonation>(
 
 // Indexes for faster lookups
 donationSchema.index({ donorId: 1 });
-donationSchema.index({ claimedBy: 1 });
 donationSchema.index({ status: 1 });
-donationSchema.index({ expiryTime: 1 });
 
 const Donation = mongoose.model<IDonation>('Donation', donationSchema);
 

@@ -40,6 +40,7 @@ class MyApp extends StatelessWidget {
   static const Color scaffoldBg = Color(0xFF121212);
   static const Color surfaceColor = Color(0xFF1E1E1E);
   static const Color accentGreen = Color(0xFF2ECC71);
+  static const Color accentRed = Color(0xFFE74C3C);
   static const Color appBarColor = Color(0xFF1A1A1A);
 
   @override
@@ -107,14 +108,14 @@ class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   List<Widget> get _pages => [
-        const Home(),
-        ShelfScreen(
-          onSearchToggle: (isActive) => setState(() => _isSearchActive = isActive),
-        ),
-        const FoodDetectionScreen(),
-        const DonationScreen(),
-        const ProfilePage(),
-      ];
+    const Home(),
+    ShelfScreen(
+      onSearchToggle: (isActive) => setState(() => _isSearchActive = isActive),
+    ),
+    const FoodDetectionScreen(),
+    const DonationScreen(),
+    const ProfilePage(),
+  ];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -131,10 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // FIX: Removed the Stack and Positioned IconButton that was overlapping content.
       // The body now only contains the IndexedStack.
       body: SafeArea(
-        child: IndexedStack(
-          index: _selectedIndex,
-          children: _pages,
-        ),
+        child: IndexedStack(index: _selectedIndex, children: _pages),
       ),
       bottomNavigationBar: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -171,6 +169,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSidebar(BuildContext context) {
+    final user = AuthService.currentUser;
+    final displayName = user?.displayName ?? 'User';
+    final email = user?.email ?? 'No email';
+
     return Drawer(
       backgroundColor: MyApp.scaffoldBg,
       child: Column(
@@ -181,13 +183,13 @@ class _HomeScreenState extends State<HomeScreen> {
               backgroundColor: MyApp.accentGreen,
               child: Icon(Icons.person, color: Colors.white, size: 40),
             ),
-            accountName: const Text(
-              "Alex Johnson",
-              style: TextStyle(fontWeight: FontWeight.bold),
+            accountName: Text(
+              displayName,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            accountEmail: const Text(
-              "alex.j@example.com",
-              style: TextStyle(color: Colors.white70),
+            accountEmail: Text(
+              email,
+              style: const TextStyle(color: Colors.white70),
             ),
           ),
           Expanded(
