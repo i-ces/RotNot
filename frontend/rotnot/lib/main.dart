@@ -40,6 +40,7 @@ class MyApp extends StatelessWidget {
   static const Color scaffoldBg = Color(0xFF121212);
   static const Color surfaceColor = Color(0xFF1E1E1E);
   static const Color accentGreen = Color(0xFF2ECC71);
+  static const Color accentRed = Color(0xFFE74C3C);
   static const Color appBarColor = Color(0xFF1A1A1A);
 
   @override

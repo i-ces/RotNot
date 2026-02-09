@@ -3,10 +3,10 @@ import 'package:http/http.dart' as http;
 import 'auth_service.dart';
 
 class ApiService {
-  // Change this to your backend URL
+  // Physical Device: Use your computer's IP address
   // Android Emulator: http://10.0.2.2:3000/api
   // iOS Simulator: http://localhost:3000/api
-  static const String _baseUrl = 'http://10.0.2.2:3000/api';
+  static const String _baseUrl = 'http://192.168.17.100:3000/api';
 
   /// Expose base URL for connection testing
   static String get baseUrl => _baseUrl;
