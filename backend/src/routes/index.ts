@@ -3,6 +3,7 @@ import { getHealth } from '../controllers/health.controller';
 import protectedRoutes from './protected.routes';
 import userRoutes from './user.routes';
 import foodRoutes from './food.routes';
+import donationRoutes from './donation.routes';
 
 const router = Router();
 
@@ -14,6 +15,9 @@ router.use('/users', userRoutes);
 
 // Food item routes (require Firebase authentication)
 router.use('/foods', foodRoutes);
+
+// Donation routes (require Firebase authentication)
+router.use('/donations', donationRoutes);
 
 // Protected routes (require Firebase authentication)
 router.use('/', protectedRoutes);
