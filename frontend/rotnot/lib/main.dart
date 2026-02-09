@@ -13,7 +13,6 @@ import 'screens/forgotpw.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  // This makes the system bar transparent and allows our app to handle the padding
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     systemNavigationBarColor: Colors.transparent,
@@ -81,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 1. Body uses SafeArea to avoid the top "notch"/status bar
+      // SafeArea ensures content doesn't go behind the status bar/notch
       body: SafeArea(
         child: IndexedStack(
           index: _selectedIndex,
@@ -89,46 +88,29 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
 
-      // 2. Adjusting the Floating Action Button Location
-      // We use a custom location or standard docked to keep it above the bar
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: AnimatedScale(
-        scale: _isSearchActive ? 0.0 : 1.0,
-        duration: const Duration(milliseconds: 200),
-        child: Container(
-          margin: const EdgeInsets.only(top: 10), // Prevents it from sitting too low
-          child: FloatingActionButton(
-            onPressed: _isSearchActive ? null : () => _onItemTapped(2), 
-            backgroundColor: MyApp.accentGreen,
-            elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 28),
-          ),
-        ),
-      ),
-
-      // 3. The Bottom Navigation Bar Fix
+      // We removed the separate FloatingActionButton to put it inside the BottomAppBar
       bottomNavigationBar: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        // We use zero height when searching, otherwise let it fit naturally
-        height: _isSearchActive ? 0 : null, 
+        height: _isSearchActive ? 0 : null, // Hide when searching
         child: Wrap(
           children: [
-            // SafeArea here is the MAGIC. It automatically adds padding 
-            // specifically for the system navigation bar (back/home buttons).
+            // SafeArea handles the bottom system navigation bar (Home/Back/Recent buttons)
             SafeArea(
               child: BottomAppBar(
                 color: MyApp.surfaceColor,
                 elevation: 0,
-                height: 70, // Standard height
-                notchMargin: 10,
-                shape: const CircularNotchedRectangle(),
+                padding: EdgeInsets.zero, // Clean padding for custom row
+                height: 80, // Slightly taller to accommodate the camera button
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  crossAxisAlignment: CrossAxisAlignment.center, // Aligns all items in the same horizontal row
                   children: [
                     _buildNavItem(0, Icons.home_rounded, "Home"),
                     _buildNavItem(1, Icons.inventory_2_rounded, "Shelf"),
-                    const SizedBox(width: 50), // Gap for the Camera FAB
+                    
+                    // --- INTEGRATED CAMERA BUTTON ---
+                    _buildCameraButton(),
+                    
                     _buildNavItem(3, Icons.volunteer_activism_rounded, "Donate"),
                     _buildNavItem(4, Icons.person_rounded, "Profile"),
                   ],
@@ -141,26 +123,55 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildCameraButton() {
+    return GestureDetector(
+      onTap: () => _onItemTapped(2),
+      child: Container(
+        width: 54,
+        height: 54,
+        decoration: BoxDecoration(
+          color: MyApp.accentGreen,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: MyApp.accentGreen.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 28),
+      ),
+    );
+  }
+
   Widget _buildNavItem(int index, IconData icon, String label) {
     bool isSelected = _selectedIndex == index;
     return GestureDetector(
       onTap: () => _onItemTapped(index),
       behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: isSelected ? MyApp.accentGreen : Colors.white38, size: 24),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      child: SizedBox(
+        width: 60,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
               color: isSelected ? MyApp.accentGreen : Colors.white38,
+              size: 24,
             ),
-          )
-        ],
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected ? MyApp.accentGreen : Colors.white38,
+              ),
+            )
+          ],
+        ),
       ),
     );
   }
