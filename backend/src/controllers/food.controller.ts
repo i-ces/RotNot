@@ -236,3 +236,82 @@ export const deleteFoodItem = async (
     next(error);
   }
 };
+
+/**
+ * Get expiring food items (within next 2 days)
+ * GET /api/foods/expiring
+ */
+export const getExpiringFoods = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const ownerId = req.user?.uid;
+
+    if (!ownerId) {
+      throw new AppError('User not authenticated', 401);
+    }
+
+    const now = new Date();
+    const twoDaysFromNow = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+
+    // Find food items expiring within next 2 days
+    const foodItems = await FoodItem.find({
+      ownerId,
+      expiryDate: {
+        $gte: now,
+        $lte: twoDaysFromNow,
+      },
+    }).sort({ expiryDate: 1 });
+
+    // Update status automatically based on date difference
+    const updatedItems = await Promise.all(
+      foodItems.map(async (item) => {
+        const timeDiff = item.expiryDate.getTime() - now.getTime();
+        const daysDiff = timeDiff / (1000 * 60 * 60 * 24);
+
+        let newStatus = item.status;
+
+        if (daysDiff < 0) {
+          newStatus = FoodStatus.EXPIRED;
+        } else if (daysDiff <= 2) {
+          newStatus = FoodStatus.EXPIRING;
+        } else {
+          newStatus = FoodStatus.FRESH;
+        }
+
+        // Update status if it has changed
+        if (newStatus !== item.status) {
+          item.status = newStatus;
+          await item.save();
+        }
+
+        return {
+          id: item._id,
+          name: item.name,
+          category: item.category,
+          quantity: item.quantity,
+          unit: item.unit,
+          addedAt: item.addedAt,
+          expiryDate: item.expiryDate,
+          status: item.status,
+          ownerId: item.ownerId,
+          daysUntilExpiry: Math.ceil(daysDiff),
+        };
+      })
+    );
+
+    const response: ApiResponse = {
+      success: true,
+      data: {
+        count: updatedItems.length,
+        foodItems: updatedItems,
+      },
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};

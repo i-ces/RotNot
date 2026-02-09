@@ -5,6 +5,7 @@ import {
   getFoodItems,
   updateFoodItem,
   deleteFoodItem,
+  getExpiringFoods,
 } from '../controllers/food.controller';
 
 const router = Router();
@@ -14,6 +15,9 @@ const router = Router();
  * All routes require Firebase authentication
  * Users can only access their own food items
  */
+
+// Get expiring food items (must be before '/:id' route)
+router.get('/expiring', verifyFirebaseToken, getExpiringFoods);
 
 // Create a new food item
 router.post('/', verifyFirebaseToken, createFoodItem);
