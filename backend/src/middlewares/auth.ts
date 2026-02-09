@@ -2,17 +2,23 @@ import { Request, Response, NextFunction } from 'express';
 import { auth } from '../config/firebase';
 import { AppError } from './errorHandler';
 
+// User information attached to request
+export interface RequestUser {
+  uid: string;
+  email?: string;
+  name?: string;
+}
+
+// Request with authenticated user
+export interface RequestWithUser extends Request {
+  user: RequestUser;
+}
+
 // Extend Express Request to include user info
 declare global {
   namespace Express {
     interface Request {
-      user?: {
-        uid: string;
-        email?: string;
-        emailVerified?: boolean;
-        name?: string;
-        picture?: string;
-      };
+      user?: RequestUser;
     }
   }
 }
@@ -24,7 +30,7 @@ declare global {
  */
 export const verifyFirebaseToken = async (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
@@ -54,9 +60,7 @@ export const verifyFirebaseToken = async (
     req.user = {
       uid: decodedToken.uid,
       email: decodedToken.email,
-      emailVerified: decodedToken.email_verified,
       name: decodedToken.name,
-      picture: decodedToken.picture,
     };
 
     // Continue to next middleware/controller
@@ -87,7 +91,7 @@ export const verifyFirebaseToken = async (
  */
 export const optionalFirebaseAuth = async (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
@@ -106,9 +110,7 @@ export const optionalFirebaseAuth = async (
       req.user = {
         uid: decodedToken.uid,
         email: decodedToken.email,
-        emailVerified: decodedToken.email_verified,
         name: decodedToken.name,
-        picture: decodedToken.picture,
       };
     }
   } catch (error) {
