@@ -11,7 +11,8 @@ export interface IUserProfile extends Document {
   firebaseUid: string;
   role: UserRole;
   name: string;
-  phone: string;
+  email?: string;
+  phone?: string;
   createdAt: Date;
 }
 
@@ -33,9 +34,13 @@ const userProfileSchema = new Schema<IUserProfile>(
       required: [true, 'Name is required'],
       trim: true,
     },
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+    },
     phone: {
       type: String,
-      required: [true, 'Phone number is required'],
       trim: true,
     },
   },
