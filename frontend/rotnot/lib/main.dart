@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+// Import all your screen files
 import 'screens/login.dart';
 import 'screens/home.dart';
 import 'screens/food_detection.dart';
-import 'screens/recipe.dart';
+import 'screens/shelf.dart';      
 import 'screens/donation.dart';
-import 'screens/shelf.dart';
-import 'screens/settings.dart';
+import 'screens/profile.dart'; 
 import 'screens/signup.dart';
 import 'screens/forgotpw.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  // This makes the system bar transparent and allows our app to handle the padding
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarIconBrightness: Brightness.light,
+  ));
   runApp(const MyApp());
 }
 
@@ -32,18 +40,6 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: scaffoldBg,
         primaryColor: accentGreen,
         fontFamily: 'Roboto',
-        appBarTheme: const AppBarTheme(
-          backgroundColor: appBarColor,
-          elevation: 0,
-          centerTitle: false,
-          iconTheme: IconThemeData(color: accentGreen),
-          titleTextStyle: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
-          ),
-        ),
       ),
       initialRoute: '/',
       routes: {
@@ -64,128 +60,107 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  Widget _activeBody = const Home(); 
-  String _activeTitle = 'Home';
-  IconData _activeIcon = Icons.home_rounded;
+  int _selectedIndex = 0;
+  bool _isSearchActive = false; 
 
-  void _changeScreen(Widget newScreen, String newTitle, IconData newIcon) {
+  List<Widget> get _pages => [
+    const Home(),
+    ShelfScreen(onSearchToggle: (isActive) => setState(() => _isSearchActive = isActive)),
+    const FoodDetectionScreen(),
+    const DonationScreen(),
+    const ProfilePage(),
+  ];
+
+  void _onItemTapped(int index) {
     setState(() {
-      _activeBody = newScreen;
-      _activeTitle = newTitle;
-      _activeIcon = newIcon;
+      _selectedIndex = index;
+      if (index != 1) _isSearchActive = false;
     });
-    Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Icon(_activeIcon, color: MyApp.accentGreen, size: 22),
-            const SizedBox(width: 12),
-            Text(_activeTitle == 'Home' ? 'RotNot' : _activeTitle),
-          ],
+      // 1. Body uses SafeArea to avoid the top "notch"/status bar
+      body: SafeArea(
+        child: IndexedStack(
+          index: _selectedIndex,
+          children: _pages,
         ),
       ),
-      drawer: Drawer(
-        backgroundColor: MyApp.surfaceColor,
-        child: SafeArea( // <--- THIS PREVENTS BLEEDING TO THE TOP
-          child: Column(
-            children: [
-              // This pushes the content down further if SafeArea isn't enough
-              const SizedBox(height: 20), 
 
-              // --- LOGO IN DRAWER HEADER ---
-              Container(
-                height: 140,
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: MyApp.appBarColor,
-                  border: Border(
-                    top: BorderSide(color: Colors.white10, width: 1), // Optional: adds a top line
-                    bottom: BorderSide(color: Colors.white10, width: 1),
-                  ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      'assets/images/logo.png',
-                      height: 60,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(Icons.eco_rounded, color: MyApp.accentGreen, size: 50);
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      "ROTNOT",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  children: [
-                    _buildDrawerTile('Home', Icons.home_rounded, const Home()),
-                    _buildDrawerTile('Food Detection', Icons.camera_rounded, const FoodDetectionScreen()),
-                    _buildDrawerTile('Recipe', Icons.restaurant_menu_rounded, const RecipeScreen()),
-                    _buildDrawerTile('Donation', Icons.volunteer_activism_rounded, const DonationScreen()),
-                    _buildDrawerTile('Shelf', Icons.inventory_2_rounded, const ShelfScreen()),
-                    _buildDrawerTile('Settings', Icons.settings_rounded, const SettingsScreen()),
-                  ],
-                ),
-              ),
-
-              const Divider(color: Colors.white10),
-              ListTile(
-                leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-                title: const Text('Logout', style: TextStyle(color: Colors.redAccent)),
-                onTap: () => Navigator.pushReplacementNamed(context, '/'),
-              ),
-              const SizedBox(height: 20),
-            ],
+      // 2. Adjusting the Floating Action Button Location
+      // We use a custom location or standard docked to keep it above the bar
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: AnimatedScale(
+        scale: _isSearchActive ? 0.0 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        child: Container(
+          margin: const EdgeInsets.only(top: 10), // Prevents it from sitting too low
+          child: FloatingActionButton(
+            onPressed: _isSearchActive ? null : () => _onItemTapped(2), 
+            backgroundColor: MyApp.accentGreen,
+            elevation: 4,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 28),
           ),
         ),
       ),
-      body: SafeArea(
-        bottom: true,
-        child: _activeBody,
+
+      // 3. The Bottom Navigation Bar Fix
+      bottomNavigationBar: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        // We use zero height when searching, otherwise let it fit naturally
+        height: _isSearchActive ? 0 : null, 
+        child: Wrap(
+          children: [
+            // SafeArea here is the MAGIC. It automatically adds padding 
+            // specifically for the system navigation bar (back/home buttons).
+            SafeArea(
+              child: BottomAppBar(
+                color: MyApp.surfaceColor,
+                elevation: 0,
+                height: 70, // Standard height
+                notchMargin: 10,
+                shape: const CircularNotchedRectangle(),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildNavItem(0, Icons.home_rounded, "Home"),
+                    _buildNavItem(1, Icons.inventory_2_rounded, "Shelf"),
+                    const SizedBox(width: 50), // Gap for the Camera FAB
+                    _buildNavItem(3, Icons.volunteer_activism_rounded, "Donate"),
+                    _buildNavItem(4, Icons.person_rounded, "Profile"),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildDrawerTile(String title, IconData icon, Widget screen) {
-    bool isSelected = (_activeTitle == title);
-    
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        color: isSelected ? MyApp.accentGreen.withOpacity(0.15) : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListTile(
-        leading: Icon(
-          icon, 
-          color: isSelected ? MyApp.accentGreen : Colors.white60,
-          size: 22,
-        ),
-        title: Text(
-          title, 
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.white60,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+  Widget _buildNavItem(int index, IconData icon, String label) {
+    bool isSelected = _selectedIndex == index;
+    return GestureDetector(
+      onTap: () => _onItemTapped(index),
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: isSelected ? MyApp.accentGreen : Colors.white38, size: 24),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isSelected ? MyApp.accentGreen : Colors.white38,
+            ),
           )
-        ),
-        onTap: () => _changeScreen(screen, title, icon),
+        ],
       ),
     );
   }
