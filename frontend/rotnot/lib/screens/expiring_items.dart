@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rotnot/services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ExpiringItemsScreen extends StatefulWidget {
   const ExpiringItemsScreen({super.key});
@@ -16,11 +17,47 @@ class _ExpiringItemsScreenState extends State<ExpiringItemsScreen> {
 
   List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = true;
+  Set<String> _clearedNotifications = {};
 
   @override
   void initState() {
     super.initState();
+    _loadClearedNotifications();
+  }
+
+  Future<void> _loadClearedNotifications() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cleared = prefs.getStringList('cleared_notifications') ?? [];
+    setState(() {
+      _clearedNotifications = cleared.toSet();
+    });
     _loadNotifications();
+  }
+
+  Future<void> _saveClearedNotifications() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+      'cleared_notifications',
+      _clearedNotifications.toList(),
+    );
+  }
+
+  String _generateNotificationId(Map<String, dynamic> notification) {
+    final type = notification['type'];
+    if (type == 'expiring') {
+      return 'expiring_${notification['title']}_${notification['time']}';
+    } else {
+      return 'donation_${notification['title']}_${notification['time']}';
+    }
+  }
+
+  void _clearNotification(int index) {
+    final notificationId = _generateNotificationId(_notifications[index]);
+    setState(() {
+      _clearedNotifications.add(notificationId);
+      _notifications.removeAt(index);
+    });
+    _saveClearedNotifications();
   }
 
   Future<void> _loadNotifications() async {
@@ -39,7 +76,7 @@ class _ExpiringItemsScreenState extends State<ExpiringItemsScreen> {
           final daysLeft = expiryDate.difference(now).inDays;
 
           if (daysLeft <= 3) {
-            notifications.add({
+            final notification = {
               'type': 'expiring',
               'title': item['name'] ?? 'Unknown Item',
               'message': daysLeft < 0
@@ -60,7 +97,13 @@ class _ExpiringItemsScreenState extends State<ExpiringItemsScreen> {
                   ? accentOrange
                   : accentOrange.withOpacity(0.7),
               'time': expiryDate,
-            });
+            };
+
+            // Only add if not cleared
+            final notificationId = _generateNotificationId(notification);
+            if (!_clearedNotifications.contains(notificationId)) {
+              notifications.add(notification);
+            }
           }
         }
       }
@@ -106,7 +149,7 @@ class _ExpiringItemsScreenState extends State<ExpiringItemsScreen> {
               icon = Icons.cancel_outlined;
             }
 
-            notifications.add({
+            final notification = {
               'type': 'donation',
               'title':
                   '${status[0].toUpperCase()}${status.substring(1)} Donation',
@@ -115,7 +158,13 @@ class _ExpiringItemsScreenState extends State<ExpiringItemsScreen> {
               'icon': icon,
               'color': color,
               'time': createdAt,
-            });
+            };
+
+            // Only add if not cleared
+            final notificationId = _generateNotificationId(notification);
+            if (!_clearedNotifications.contains(notificationId)) {
+              notifications.add(notification);
+            }
           }
         }
       }
@@ -191,7 +240,10 @@ class _ExpiringItemsScreenState extends State<ExpiringItemsScreen> {
                       padding: const EdgeInsets.all(20),
                       itemCount: _notifications.length,
                       itemBuilder: (context, index) {
-                        return _buildNotificationCard(_notifications[index]);
+                        return _buildNotificationCard(
+                          _notifications[index],
+                          index,
+                        );
                       },
                     ),
             ),
@@ -238,7 +290,7 @@ class _ExpiringItemsScreenState extends State<ExpiringItemsScreen> {
     );
   }
 
-  Widget _buildNotificationCard(Map<String, dynamic> notification) {
+  Widget _buildNotificationCard(Map<String, dynamic> notification, int index) {
     final type = notification['type'] as String;
     final title = notification['title']?.toString() ?? 'Notification';
     final message = notification['message']?.toString() ?? '';
@@ -312,6 +364,31 @@ class _ExpiringItemsScreenState extends State<ExpiringItemsScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 18),
+                      color: Colors.white.withOpacity(0.4),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => _clearNotification(index),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        message,
+                        style: TextStyle(
+                          color: color,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Text(
                       timeAgo,
                       style: TextStyle(
@@ -320,17 +397,6 @@ class _ExpiringItemsScreenState extends State<ExpiringItemsScreen> {
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  message,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 if (category.isNotEmpty) ...[
                   const SizedBox(height: 6),
