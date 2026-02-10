@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:rotnot/services/auth_service.dart';
 import 'package:rotnot/services/api_service.dart';
-import 'package:rotnot/screens/savedrecipes.dart';
-import 'package:rotnot/screens/impactreport.dart';
 import 'package:rotnot/screens/mycontributions.dart';
 import 'package:rotnot/screens/leaderboard.dart';
+import 'package:rotnot/screens/settings.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -88,10 +87,21 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("My Impact"),
+        title: const Text("My Profile"),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_rounded),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
@@ -212,26 +222,37 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 12),
             _buildOptionTile(
               context,
-              Icons.favorite_rounded,
-              "Saved Recipes",
-              const SavedRecipesPage(),
-            ),
-            _buildOptionTile(
-              context,
               Icons.card_giftcard_rounded,
               "My Contributions",
               const MyContributionsPage(),
             ),
-            _buildOptionTile(
+
+            const SizedBox(height: 32),
+
+            // --- 4. HELP & SUPPORT ---
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "SUPPORT",
+                style: TextStyle(
+                  color: Colors.white38,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildHelpTile(
               context,
-              Icons.analytics_rounded,
-              "Impact Report",
-              const ImpactReportPage(),
+              Icons.help_outline_rounded,
+              "Help & Support",
+              "Get assistance and FAQs",
             ),
 
             const SizedBox(height: 32),
 
-            // --- 4. LOGOUT BUTTON ---
+            // --- 5. LOGOUT BUTTON ---
             const Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -277,6 +298,42 @@ class _ProfilePageState extends State<ProfilePage> {
           context,
           MaterialPageRoute(builder: (context) => targetPage),
         ),
+      ),
+    );
+  }
+
+  Widget _buildHelpTile(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String subtitle,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: ListTile(
+        leading: Icon(icon, color: accentGreen),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(color: Colors.white60, fontSize: 12),
+        ),
+        trailing: const Icon(
+          Icons.chevron_right_rounded,
+          color: Colors.white24,
+        ),
+        onTap: () {
+          // TODO: Navigate to help page
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Help & Support feature coming soon'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        },
       ),
     );
   }
