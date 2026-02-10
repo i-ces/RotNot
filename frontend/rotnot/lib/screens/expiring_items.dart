@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:rotnot/services/api_service.dart';
+import 'package:RotNot/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ExpiringItemsScreen extends StatefulWidget {

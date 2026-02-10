@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:rotnot/services/notification_service.dart';
+import 'package:RotNot/services/notification_service.dart';
 
 /// 🧪 TEST SCREEN: Use this to test notifications in real-time
 /// Add this to your navigation to test notification functionality

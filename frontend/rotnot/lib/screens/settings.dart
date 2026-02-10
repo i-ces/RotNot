@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:rotnot/services/auth_service.dart';
-import 'package:rotnot/screens/help.dart';
-import 'package:rotnot/screens/notification_test.dart';
+import 'package:RotNot/services/auth_service.dart';
+import 'package:RotNot/screens/help.dart';
+import 'package:RotNot/screens/notification_test.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});

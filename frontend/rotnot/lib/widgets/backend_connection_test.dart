@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:rotnot/services/api_service.dart';
+import 'package:RotNot/services/api_service.dart';
 
 /// Widget to test backend connection
 /// Add this to any screen to verify backend connectivity
