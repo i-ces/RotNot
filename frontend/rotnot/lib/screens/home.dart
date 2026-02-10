@@ -172,8 +172,14 @@ class _HomeState extends State<Home> {
                   children: [
                     // --- 0. TOP NAVIGATION ROW ---
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [_buildNotificationBell()],
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Image.asset(
+                          'assets/images/logo.png',
+                          height: 60,
+                        ),
+                        _buildNotificationBell(),
+                      ],
                     ),
 
                     const SizedBox(height: 25),
