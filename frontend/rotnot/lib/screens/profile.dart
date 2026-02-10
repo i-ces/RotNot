@@ -36,43 +36,87 @@ class ProfilePage extends StatelessWidget {
                 child: CircleAvatar(
                   radius: 46,
                   backgroundColor: const Color(0xFF121212),
-                  child: const Icon(Icons.person_rounded, size: 50, color: Colors.white),
+                  child: const Icon(
+                    Icons.person_rounded,
+                    size: 50,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 12),
-            Text(displayName, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            Text(email, style: const TextStyle(color: Colors.white60, fontSize: 13)),
+            Text(
+              displayName,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              email,
+              style: const TextStyle(color: Colors.white60, fontSize: 13),
+            ),
             const SizedBox(height: 24),
 
             // --- 2. YOUR RANKING CARD (Gateway to Leaderboard) ---
             const Align(
               alignment: Alignment.centerLeft,
-              child: Text("COMMUNITY STANDING", style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+              child: Text(
+                "COMMUNITY STANDING",
+                style: TextStyle(
+                  color: Colors.white38,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                ),
+              ),
             ),
             const SizedBox(height: 12),
             GestureDetector(
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const LeaderboardPage())),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LeaderboardPage(),
+                ),
+              ),
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [accentGreen.withOpacity(0.2), surfaceColor]),
+                  gradient: LinearGradient(
+                    colors: [accentGreen.withOpacity(0.2), surfaceColor],
+                  ),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: accentGreen.withOpacity(0.3)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.emoji_events_rounded, color: accentGreen, size: 30),
+                    const Icon(
+                      Icons.emoji_events_rounded,
+                      color: accentGreen,
+                      size: 30,
+                    ),
                     const SizedBox(width: 16),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text("Current Rank", style: TextStyle(color: Colors.white60, fontSize: 12)),
-                        Text("#24 in Nepal", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        const Text(
+                          "Current Rank",
+                          style: TextStyle(color: Colors.white60, fontSize: 12),
+                        ),
+                        Text(
+                          "#24 in Nepal",
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
                     const Spacer(),
-                    const Text("View All", style: TextStyle(color: accentGreen, fontWeight: FontWeight.bold)),
+                    const Text(
+                      "View All",
+                      style: TextStyle(
+                        color: accentGreen,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const Icon(Icons.chevron_right_rounded, color: accentGreen),
                   ],
                 ),
@@ -84,28 +128,175 @@ class ProfilePage extends StatelessWidget {
             // --- 3. COLLECTIONS TILES ---
             const Align(
               alignment: Alignment.centerLeft,
-              child: Text("COLLECTIONS", style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+              child: Text(
+                "COLLECTIONS",
+                style: TextStyle(
+                  color: Colors.white38,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                ),
+              ),
             ),
             const SizedBox(height: 12),
-            _buildOptionTile(context, Icons.favorite_rounded, "Saved Recipes", const SavedRecipesPage()),
-            _buildOptionTile(context, Icons.card_giftcard_rounded, "My Contributions", const MyContributionsPage()),
-            _buildOptionTile(context, Icons.analytics_rounded, "Impact Report", const ImpactReportPage()),
+            _buildOptionTile(
+              context,
+              Icons.favorite_rounded,
+              "Saved Recipes",
+              const SavedRecipesPage(),
+            ),
+            _buildOptionTile(
+              context,
+              Icons.card_giftcard_rounded,
+              "My Contributions",
+              const MyContributionsPage(),
+            ),
+            _buildOptionTile(
+              context,
+              Icons.analytics_rounded,
+              "Impact Report",
+              const ImpactReportPage(),
+            ),
+
+            const SizedBox(height: 32),
+
+            // --- 4. LOGOUT BUTTON ---
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "ACCOUNT",
+                style: TextStyle(
+                  color: Colors.white38,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildLogoutButton(context),
+
+            const SizedBox(height: 24),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildOptionTile(BuildContext context, IconData icon, String title, Widget targetPage) {
+  Widget _buildOptionTile(
+    BuildContext context,
+    IconData icon,
+    String title,
+    Widget targetPage,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(color: surfaceColor, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: ListTile(
         leading: Icon(icon, color: accentGreen),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        trailing: const Icon(Icons.chevron_right_rounded, color: Colors.white24),
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => targetPage)),
+        trailing: const Icon(
+          Icons.chevron_right_rounded,
+          color: Colors.white24,
+        ),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => targetPage),
+        ),
       ),
     );
+  }
+
+  Widget _buildLogoutButton(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.red.withOpacity(0.3)),
+      ),
+      child: ListTile(
+        leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+        title: const Text(
+          "Logout",
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Colors.redAccent,
+          ),
+        ),
+        trailing: const Icon(
+          Icons.chevron_right_rounded,
+          color: Colors.white24,
+        ),
+        onTap: () => _handleLogout(context),
+      ),
+    );
+  }
+
+  void _handleLogout(BuildContext context) async {
+    // Show confirmation dialog
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: surfaceColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Logout"),
+        content: const Text("Are you sure you want to logout?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(
+              "Cancel",
+              style: TextStyle(color: Colors.white60),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              "Logout",
+              style: TextStyle(color: Colors.redAccent),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout == true) {
+      try {
+        // Show loading indicator
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(color: accentGreen),
+          ),
+        );
+
+        // Call logout from AuthService
+        await AuthService.logout();
+
+        // The AuthGate will automatically redirect to login screen
+        // due to authStateChanges stream, so we just pop the loading dialog
+        if (context.mounted) {
+          Navigator.pop(context); // Close loading dialog
+        }
+      } catch (e) {
+        // Close loading dialog
+        if (context.mounted) {
+          Navigator.pop(context);
+
+          // Show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Logout failed: ${e.toString()}"),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+      }
+    }
   }
 }
