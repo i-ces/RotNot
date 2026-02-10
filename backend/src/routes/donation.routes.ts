@@ -5,6 +5,11 @@ import {
   getUserDonations,
   getDonationById,
   updateDonationStatus,
+  getPendingDonations,
+  acceptDonation,
+  declineDonation,
+  dismissDonation,
+  getLeaderboard,
 } from '../controllers/donation.controller';
 
 const router = Router();
@@ -19,6 +24,21 @@ router.post('/', verifyFirebaseToken, createDonation);
 
 // Get all donations for current user
 router.get('/', verifyFirebaseToken, getUserDonations);
+
+// Get pending donations (for food banks)
+router.get('/pending', verifyFirebaseToken, getPendingDonations);
+
+// Get leaderboard (public)
+router.get('/leaderboard', getLeaderboard);
+
+// Accept a donation (food bank)
+router.post('/:id/accept', verifyFirebaseToken, acceptDonation);
+
+// Decline a donation (food bank)
+router.post('/:id/decline', verifyFirebaseToken, declineDonation);
+
+// Dismiss a donation (donor)
+router.post('/:id/dismiss', verifyFirebaseToken, dismissDonation);
 
 // Get a specific donation by ID
 router.get('/:id', verifyFirebaseToken, getDonationById);

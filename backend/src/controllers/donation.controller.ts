@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import Donation, { DonationStatus } from '../models/donation.model';
 import FoodItem, { FoodStatus } from '../models/foodItem.model';
+import UserProfile from '../models/userProfile.model';
 import { ApiResponse } from '../types';
 import { AppError } from '../middlewares/errorHandler';
 
@@ -55,8 +56,7 @@ export const createDonation = async (
       donorId,
       foodBankId,
       foodItems: foodItemsData,
-      status: DonationStatus.SCHEDULED,
-      pickupScheduledAt: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
+      status: DonationStatus.PENDING,
       notes,
     });
 
@@ -100,7 +100,10 @@ export const getUserDonations = async (
       throw new AppError('User not authenticated', 401);
     }
 
-    const donations = await Donation.find({ donorId })
+    const donations = await Donation.find({ 
+      donorId,
+      dismissedByDonor: { $ne: true }
+    })
       .populate('foodBankId')
       .sort({ createdAt: -1 });
 
@@ -261,6 +264,268 @@ export const cancelDonation = async (
     const response: ApiResponse = {
       success: true,
       message: 'Donation cancelled successfully',
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get pending donations for a food bank (for food bank users)
+ * GET /api/donations/pending
+ */
+export const getPendingDonations = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user?.uid;
+
+    if (!userId) {
+      throw new AppError('User not authenticated', 401);
+    }
+
+    // Find the user's profile to get their food bank ID
+    const userProfile = await UserProfile.findOne({ firebaseUid: userId });
+
+    if (!userProfile) {
+      throw new AppError('User profile not found', 404);
+    }
+
+    if (!userProfile.foodBankId) {
+      throw new AppError('User is not associated with a food bank', 403);
+    }
+
+    // Get all pending donations for this specific food bank
+    const donations = await Donation.find({
+      foodBankId: userProfile.foodBankId,
+      status: DonationStatus.PENDING,
+    })
+      .populate('foodBankId')
+      .sort({ createdAt: -1 });
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Pending donations retrieved successfully',
+      data: {
+        donations,
+      },
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Accept a donation (food bank)
+ * POST /api/donations/:id/accept
+ */
+export const acceptDonation = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user?.uid;
+
+    if (!userId) {
+      throw new AppError('User not authenticated', 401);
+    }
+
+    const donation = await Donation.findById(req.params.id);
+
+    if (!donation) {
+      throw new AppError('Donation not found', 404);
+    }
+
+    if (donation.status !== DonationStatus.PENDING) {
+      throw new AppError('Only pending donations can be accepted', 400);
+    }
+
+    // Update donation status
+    donation.status = DonationStatus.ACCEPTED;
+    donation.pickupScheduledAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours from now
+    await donation.save();
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Donation accepted successfully',
+      data: {
+        donation,
+      },
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Decline a donation (food bank)
+ * POST /api/donations/:id/decline
+ */
+export const declineDonation = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user?.uid;
+
+    if (!userId) {
+      throw new AppError('User not authenticated', 401);
+    }
+
+    const donation = await Donation.findById(req.params.id);
+
+    if (!donation) {
+      throw new AppError('Donation not found', 404);
+    }
+
+    if (donation.status !== DonationStatus.PENDING) {
+      throw new AppError('Only pending donations can be declined', 400);
+    }
+
+    // Update donation status
+    donation.status = DonationStatus.DECLINED;
+    await donation.save();
+
+    // Restore food items to available status
+    const itemIds = donation.foodItems.map((item) => item.foodItemId);
+    await FoodItem.updateMany(
+      { _id: { $in: itemIds } },
+      { status: FoodStatus.FRESH }
+    );
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Donation declined successfully',
+      data: {
+        donation,
+      },
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Dismiss a donation (donor)
+ * POST /api/donations/:id/dismiss
+ */
+export const dismissDonation = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user?.uid;
+
+    if (!userId) {
+      throw new AppError('User not authenticated', 401);
+    }
+
+    const donation = await Donation.findById(req.params.id);
+
+    if (!donation) {
+      throw new AppError('Donation not found', 404);
+    }
+
+    // Verify the donation belongs to this user
+    if (donation.donorId !== userId) {
+      throw new AppError('Not authorized to dismiss this donation', 403);
+    }
+
+    // Update dismissed status
+    donation.dismissedByDonor = true;
+    await donation.save();
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Donation dismissed successfully',
+      data: {
+        donation,
+      },
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get leaderboard (aggregated donation statistics by user)
+ * GET /api/donations/leaderboard
+ */
+export const getLeaderboard = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    // Aggregate accepted donations by donor
+    const leaderboardData = await Donation.aggregate([
+      {
+        $match: { status: DonationStatus.ACCEPTED },
+      },
+      {
+        $unwind: '$foodItems',
+      },
+      {
+        $group: {
+          _id: '$donorId',
+          totalDonations: { $sum: 1 },
+          totalItems: { $sum: '$foodItems.quantity' },
+          donationIds: { $push: '$_id' },
+        },
+      },
+      {
+        $sort: { totalItems: -1 },
+      },
+      {
+        $limit: 100,
+      },
+    ]);
+
+    // Fetch user profiles for donors
+    const donorIds = leaderboardData.map((item) => item._id);
+    const profiles = await UserProfile.find({
+      firebaseUid: { $in: donorIds },
+    });
+
+    // Map profiles to donor IDs
+    const profileMap = new Map(
+      profiles.map((p) => [p.firebaseUid, p])
+    );
+
+    // Build leaderboard response
+    const leaderboard = leaderboardData.map((item, index) => {
+      const profile = profileMap.get(item._id);
+      return {
+        rank: index + 1,
+        donorId: item._id,
+        name: profile?.name || 'Anonymous',
+        role: profile?.role || 'user',
+        totalDonations: item.totalDonations,
+        totalItems: item.totalItems,
+      };
+    });
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Leaderboard retrieved successfully',
+      data: {
+        leaderboard,
+      },
     };
 
     res.status(200).json(response);

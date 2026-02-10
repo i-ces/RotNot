@@ -2,6 +2,8 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export enum DonationStatus {
   PENDING = 'pending',
+  ACCEPTED = 'accepted',
+  DECLINED = 'declined',
   SCHEDULED = 'scheduled',
   PICKED_UP = 'picked_up',
   COMPLETED = 'completed',
@@ -20,6 +22,7 @@ export interface IDonation extends Document {
   status: DonationStatus;
   pickupScheduledAt?: Date;
   pickupCompletedAt?: Date;
+  dismissedByDonor?: boolean;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -68,6 +71,10 @@ const donationSchema = new Schema<IDonation>(
     },
     pickupCompletedAt: {
       type: Date,
+    },
+    dismissedByDonor: {
+      type: Boolean,
+      default: false,
     },
     notes: {
       type: String,
