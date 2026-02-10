@@ -150,6 +150,14 @@ class _HomeState extends State<Home> {
     final username = user?.displayName?.split(' ').first ?? 'User';
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const SmartRecipesPage()),
+        ),
+        backgroundColor: accentGreen,
+        child: const Icon(Icons.restaurant_menu, color: Colors.white),
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: accentGreen))
           : _error != null
@@ -174,10 +182,7 @@ class _HomeState extends State<Home> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Image.asset(
-                          'assets/images/logo.png',
-                          height: 60,
-                        ),
+                        Image.asset('assets/images/logo.png', height: 60),
                         _buildNotificationBell(),
                       ],
                     ),
@@ -253,19 +258,8 @@ class _HomeState extends State<Home> {
                       ),
                       const SizedBox(height: 15),
                       _buildContributionsCard(),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 80),
                     ],
-
-                    // --- 6. AI RECIPE SUGGESTION ---
-                    const Text(
-                      "AI Recipe Suggestion",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    _buildRecipeSuggestionCard(context),
                   ],
                 ),
               ),
