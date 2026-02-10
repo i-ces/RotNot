@@ -523,7 +523,9 @@ class _ShelfScreenState extends State<ShelfScreen>
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                padding: EdgeInsets.fromLTRB(
+                  24, 16, 24, 24 + MediaQuery.of(context).padding.bottom,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
