@@ -6,7 +6,7 @@ class ApiService {
   // Physical Device: Use your computer's IP address
   // Android Emulator: http://10.0.2.2:8000
   // iOS Simulator: http://localhost:8000
-  static const String _baseUrl = 'http://10.210.210.194:8000';
+  static const String _baseUrl = 'http://192.168.17.211:8000';
 
   /// Expose base URL for connection testing
   static String get baseUrl => _baseUrl;
