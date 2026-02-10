@@ -311,7 +311,7 @@ class _HomeState extends State<Home> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    "COMMUNITY CHAMPION",
+                    "TOP CONTRIBUTORS",
                     style: TextStyle(
                       color: Colors.amber,
                       fontSize: 10,

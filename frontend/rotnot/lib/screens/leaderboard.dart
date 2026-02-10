@@ -53,7 +53,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text("Community Leaderboard"),
+        title: const Text("Our Contributors"),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
