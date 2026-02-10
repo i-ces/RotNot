@@ -1,0 +1,10 @@
+version: "2"
+authtoken: 38upwWMhpOjpmW4yCtmV8vtJ4VP_sQHHLQqodXGXEYZ8LWp5
+
+tunnels:
+  express:
+    addr: 3000
+    proto: http
+  fastapi:
+    addr: 8000
+    proto: http

@@ -4,9 +4,11 @@ import 'auth_service.dart';
 
 class ApiService {
   // Physical Device: Use your computer's IP address
-  // Android Emulator: http://10.0.2.2:8000
-  // iOS Simulator: http://localhost:8000
-  static const String _baseUrl = 'http://192.168.17.211:8000';
+  // Android Emulator: http://10.0.2.2:3000
+  // iOS Simulator: http://localhost:3000
+  // Port 3000 = Node.js backend (food items, donations, etc.)
+  // Port 8000 = Python API (food detection only)
+  static const String _baseUrl = 'http://192.168.17.110:3000/api';
 
   /// Expose base URL for connection testing
   static String get baseUrl => _baseUrl;
@@ -122,6 +124,42 @@ class ApiService {
       return data['data']['profile'] as Map<String, dynamic>;
     } else {
       throw Exception('Failed to update profile: ${response.statusCode}');
+    }
+  }
+
+  /// Create or update user profile
+  /// POST or PUT /api/users/profile
+  static Future<Map<String, dynamic>> createOrUpdateUserProfile({
+    required String role,
+    String? name,
+    String? email,
+    String? phone,
+  }) async {
+    final body = <String, dynamic>{'role': role};
+    if (name != null) body['name'] = name;
+    if (email != null) body['email'] = email;
+    if (phone != null) body['phone'] = phone;
+
+    // Try to update first (PUT), if fails try create (POST)
+    try {
+      final response = await put('/users/profile', body: body);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['data']['profile'] as Map<String, dynamic>;
+      }
+    } catch (e) {
+      // If update fails, try create
+    }
+
+    // Create new profile
+    final response = await post('/users/profile', body: body);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      return data['data']['profile'] as Map<String, dynamic>;
+    } else {
+      throw Exception(
+        'Failed to create/update profile: ${response.statusCode}',
+      );
     }
   }
 
