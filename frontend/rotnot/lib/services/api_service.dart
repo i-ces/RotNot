@@ -4,9 +4,9 @@ import 'auth_service.dart';
 
 class ApiService {
   // Physical Device: Use your computer's IP address
-  // Android Emulator: http://10.0.2.2:3000/api
-  // iOS Simulator: http://localhost:3000/api
-  static const String _baseUrl = 'http://192.168.17.100:3000/api';
+  // Android Emulator: http://10.0.2.2:8000
+  // iOS Simulator: http://localhost:8000
+  static const String _baseUrl = 'http://10.210.210.194:8000';
 
   /// Expose base URL for connection testing
   static String get baseUrl => _baseUrl;
