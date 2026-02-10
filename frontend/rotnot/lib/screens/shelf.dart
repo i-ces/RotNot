@@ -85,6 +85,7 @@ class _ShelfScreenState extends State<ShelfScreen>
   String? _error;
   String _searchQuery = '';
   final FocusNode _searchFocusNode = FocusNode();
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -137,6 +138,7 @@ class _ShelfScreenState extends State<ShelfScreen>
   void dispose() {
     _tabController.dispose();
     _searchFocusNode.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -277,7 +279,18 @@ class _ShelfScreenState extends State<ShelfScreen>
       );
     }
 
-    return Column(
+    return PopScope(
+      canPop: !_searchFocusNode.hasFocus && _searchQuery.isEmpty,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          setState(() {
+            _searchController.clear();
+            _searchQuery = '';
+            _searchFocusNode.unfocus();
+          });
+        }
+      },
+      child: Column(
       children: [
         // ── Search bar (With SafeArea and increased padding) ──
         SafeArea(
@@ -285,6 +298,7 @@ class _ShelfScreenState extends State<ShelfScreen>
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 32, 16, 4),
             child: TextField(
+              controller: _searchController,
               focusNode: _searchFocusNode,
               onChanged: (v) => setState(() => _searchQuery = v),
               style: const TextStyle(color: Colors.white),
@@ -378,6 +392,7 @@ class _ShelfScreenState extends State<ShelfScreen>
             ),
           ),
       ],
+    ),
     );
   }
 
