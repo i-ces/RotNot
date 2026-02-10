@@ -419,6 +419,34 @@ class _DonationScreenState extends State<DonationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Header with logo ──
+            SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Row(
+                  children: [
+                    Image.asset(
+                      'assets/images/logo.png',
+                      height: 60,
+                      width: 60,
+                    ),
+                    const Expanded(
+                      child: Text(
+                        'Donate',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 60), // Balance the logo
+                  ],
+                ),
+              ),
+            ),
             // ── My Donations Section ──
             if (_donorDonations.isNotEmpty) ...[
               Row(
@@ -541,6 +569,34 @@ class _DonationScreenState extends State<DonationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Header with logo ──
+            SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Row(
+                  children: [
+                    Image.asset(
+                      'assets/images/logo.png',
+                      height: 60,
+                      width: 60,
+                    ),
+                    const Expanded(
+                      child: Text(
+                        'Donate',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 60), // Balance the logo
+                  ],
+                ),
+              ),
+            ),
             // ── Food Bank Banner ──
             _buildFoodBankBanner(),
             const SizedBox(height: 16),

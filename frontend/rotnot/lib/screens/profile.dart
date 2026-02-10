@@ -87,7 +87,16 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("My Profile"),
+        leadingWidth: 76,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16),
+          child: Image.asset(
+            'assets/images/logo.png',
+            height: 60,
+            width: 60,
+          ),
+        ),
+        title: const Text("Profile"),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,

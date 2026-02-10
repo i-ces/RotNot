@@ -369,30 +369,51 @@ class _ShelfScreenState extends State<ShelfScreen>
       },
       child: Column(
         children: [
-          // ── Search bar (With SafeArea and increased padding) ──
+          // ── Header with logo ──
           SafeArea(
             bottom: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 32, 16, 4),
-              child: TextField(
-                controller: _searchController,
-                focusNode: _searchFocusNode,
-                onChanged: (v) => setState(() => _searchQuery = v),
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: 'Search items…',
-                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-                  prefixIcon: Icon(
-                    Icons.search_rounded,
-                    color: Colors.white.withOpacity(0.4),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                children: [
+                  Image.asset('assets/images/logo.png', height: 60, width: 60),
+                  const Expanded(
+                    child: Text(
+                      'Shelf',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
-                  filled: true,
-                  fillColor: MyApp.surfaceColor,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
-                  ),
+                  const SizedBox(width: 60), // Balance the logo
+                ],
+              ),
+            ),
+          ),
+          // ── Search bar ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: TextField(
+              controller: _searchController,
+              focusNode: _searchFocusNode,
+              onChanged: (v) => setState(() => _searchQuery = v),
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Search items…',
+                hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  color: Colors.white.withOpacity(0.4),
+                ),
+                filled: true,
+                fillColor: MyApp.surfaceColor,
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
                 ),
               ),
             ),

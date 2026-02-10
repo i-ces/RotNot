@@ -200,44 +200,6 @@ class _SmartRecipesPageState extends State<SmartRecipesPage> {
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: [
-          // Surprise Me button
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: TextButton.icon(
-              onPressed: _isLoading || _foodItems.isEmpty
-                  ? null
-                  : _generateSurpriseRecipe,
-              icon: Icon(
-                Icons.auto_awesome_rounded,
-                color: _isLoading || _foodItems.isEmpty
-                    ? Colors.white24
-                    : accentOrange,
-                size: 18,
-              ),
-              label: Text(
-                'Surprise Me',
-                style: TextStyle(
-                  color: _isLoading || _foodItems.isEmpty
-                      ? Colors.white24
-                      : accentOrange,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                ),
-              ),
-              style: TextButton.styleFrom(
-                backgroundColor: accentOrange.withOpacity(0.1),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
       resizeToAvoidBottomInset: true,
       body: Column(
