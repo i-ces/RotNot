@@ -118,7 +118,7 @@ class FoodDetectionService {
       print('Sending image to API, base64 length: ${base64Image.length}');
 
       final response = await ApiService.post(
-        '/food-detection/detect',
+        '/detect/base64',
         body: {'image': base64Image},
       );
 
@@ -145,7 +145,7 @@ class FoodDetectionService {
   /// Check if detection service is available
   static Future<bool> checkHealth() async {
     try {
-      final response = await ApiService.get('/food-detection/health');
+      final response = await ApiService.get('/health');
       return response.statusCode == 200;
     } catch (e) {
       return false;
