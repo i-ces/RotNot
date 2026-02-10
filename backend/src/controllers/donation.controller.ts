@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import Donation, { DonationStatus } from '../models/donation.model';
-import FoodItem, { FoodStatus } from '../models/foodItem.model';
+import FoodItem from '../models/foodItem.model';
+import DonatedFood from '../models/donatedFood.model';
 import UserProfile from '../models/userProfile.model';
 import { ApiResponse } from '../types';
 import { AppError } from '../middlewares/errorHandler';
@@ -60,11 +61,25 @@ export const createDonation = async (
       notes,
     });
 
-    // Update food items status to donated
-    await FoodItem.updateMany(
-      { _id: { $in: itemIds } },
-      { status: FoodStatus.DONATED }
-    );
+    // Move food items to donated foods collection
+    const donatedFoodsData = existingItems.map((item) => ({
+      name: item.name,
+      category: item.category,
+      quantity: item.quantity,
+      unit: item.unit,
+      addedAt: item.addedAt,
+      expiryDate: item.expiryDate,
+      originalOwnerId: donorId,
+      donationId: donation._id,
+      foodBankId: foodBankId,
+      donatedAt: new Date(),
+    }));
+
+    // Insert into donated foods collection
+    await DonatedFood.insertMany(donatedFoodsData);
+
+    // Remove food items from the original collection
+    await FoodItem.deleteMany({ _id: { $in: itemIds } });
 
     const populatedDonation = await Donation.findById(donation._id).populate(
       'foodBankId'
@@ -254,12 +269,26 @@ export const cancelDonation = async (
     donation.status = DonationStatus.CANCELLED;
     await donation.save();
 
-    // Restore food items to available status
-    const itemIds = donation.foodItems.map((item) => item.foodItemId);
-    await FoodItem.updateMany(
-      { _id: { $in: itemIds } },
-      { status: FoodStatus.FRESH }
-    );
+    // Restore food items from donated collection back to active inventory
+    const donatedFoods = await DonatedFood.find({ donationId: donation._id });
+    
+    if (donatedFoods.length > 0) {
+      // Recreate food items in the FoodItem collection
+      const restoredItems = donatedFoods.map((item) => ({
+        name: item.name,
+        category: item.category,
+        quantity: item.quantity,
+        unit: item.unit,
+        addedAt: item.addedAt,
+        expiryDate: item.expiryDate,
+        ownerId: item.originalOwnerId,
+      }));
+
+      await FoodItem.insertMany(restoredItems);
+
+      // Remove from donated foods collection
+      await DonatedFood.deleteMany({ donationId: donation._id });
+    }
 
     const response: ApiResponse = {
       success: true,
@@ -396,12 +425,26 @@ export const declineDonation = async (
     donation.status = DonationStatus.DECLINED;
     await donation.save();
 
-    // Restore food items to available status
-    const itemIds = donation.foodItems.map((item) => item.foodItemId);
-    await FoodItem.updateMany(
-      { _id: { $in: itemIds } },
-      { status: FoodStatus.FRESH }
-    );
+    // Restore food items from donated collection back to active inventory
+    const donatedFoods = await DonatedFood.find({ donationId: donation._id });
+    
+    if (donatedFoods.length > 0) {
+      // Recreate food items in the FoodItem collection
+      const restoredItems = donatedFoods.map((item) => ({
+        name: item.name,
+        category: item.category,
+        quantity: item.quantity,
+        unit: item.unit,
+        addedAt: item.addedAt,
+        expiryDate: item.expiryDate,
+        ownerId: item.originalOwnerId,
+      }));
+
+      await FoodItem.insertMany(restoredItems);
+
+      // Remove from donated foods collection
+      await DonatedFood.deleteMany({ donationId: donation._id });
+    }
 
     const response: ApiResponse = {
       success: true,

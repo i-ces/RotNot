@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import FoodItem, { FoodStatus } from '../models/foodItem.model';
+import FoodItem from '../models/foodItem.model';
 import { ApiResponse } from '../types';
 import { AppError } from '../middlewares/errorHandler';
 
@@ -19,7 +19,7 @@ export const createFoodItem = async (
       throw new AppError('User not authenticated', 401);
     }
 
-    const { name, category, quantity, unit, expiryDate, status } = req.body;
+    const { name, category, quantity, unit, expiryDate } = req.body;
 
     // Validate required fields
     if (!name || !category || quantity === undefined || !unit || !expiryDate) {
@@ -31,14 +31,6 @@ export const createFoodItem = async (
       throw new AppError('Quantity must be a positive number', 400);
     }
 
-    // Validate status if provided
-    if (status && !Object.values(FoodStatus).includes(status)) {
-      throw new AppError(
-        `Invalid status. Must be one of: ${Object.values(FoodStatus).join(', ')}`,
-        400
-      );
-    }
-
     // Create food item
     const foodItem = await FoodItem.create({
       name,
@@ -46,7 +38,6 @@ export const createFoodItem = async (
       quantity,
       unit,
       expiryDate: new Date(expiryDate),
-      status: status || FoodStatus.FRESH,
       ownerId,
     });
 
@@ -62,7 +53,6 @@ export const createFoodItem = async (
           unit: foodItem.unit,
           addedAt: foodItem.addedAt,
           expiryDate: foodItem.expiryDate,
-          status: foodItem.status,
           ownerId: foodItem.ownerId,
         },
       },
@@ -105,7 +95,6 @@ export const getFoodItems = async (
           unit: item.unit,
           addedAt: item.addedAt,
           expiryDate: item.expiryDate,
-          status: item.status,
           ownerId: item.ownerId,
         })),
       },
@@ -146,19 +135,11 @@ export const updateFoodItem = async (
       throw new AppError('You do not have permission to update this food item', 403);
     }
 
-    const { name, category, quantity, unit, expiryDate, status } = req.body;
+    const { name, category, quantity, unit, expiryDate } = req.body;
 
     // Validate quantity if provided
     if (quantity !== undefined && quantity < 0) {
       throw new AppError('Quantity must be a positive number', 400);
-    }
-
-    // Validate status if provided
-    if (status && !Object.values(FoodStatus).includes(status)) {
-      throw new AppError(
-        `Invalid status. Must be one of: ${Object.values(FoodStatus).join(', ')}`,
-        400
-      );
     }
 
     // Update fields
@@ -167,7 +148,6 @@ export const updateFoodItem = async (
     if (quantity !== undefined) foodItem.quantity = quantity;
     if (unit !== undefined) foodItem.unit = unit;
     if (expiryDate !== undefined) foodItem.expiryDate = new Date(expiryDate);
-    if (status !== undefined) foodItem.status = status;
 
     await foodItem.save();
 
@@ -183,7 +163,6 @@ export const updateFoodItem = async (
           unit: foodItem.unit,
           addedAt: foodItem.addedAt,
           expiryDate: foodItem.expiryDate,
-          status: foodItem.status,
           ownerId: foodItem.ownerId,
         },
       },
@@ -265,42 +244,23 @@ export const getExpiringFoods = async (
       },
     }).sort({ expiryDate: 1 });
 
-    // Update status automatically based on date difference
-    const updatedItems = await Promise.all(
-      foodItems.map(async (item) => {
-        const timeDiff = item.expiryDate.getTime() - now.getTime();
-        const daysDiff = timeDiff / (1000 * 60 * 60 * 24);
+    // Calculate days until expiry
+    const updatedItems = foodItems.map((item) => {
+      const timeDiff = item.expiryDate.getTime() - now.getTime();
+      const daysDiff = timeDiff / (1000 * 60 * 60 * 24);
 
-        let newStatus = item.status;
-
-        if (daysDiff < 0) {
-          newStatus = FoodStatus.EXPIRED;
-        } else if (daysDiff <= 2) {
-          newStatus = FoodStatus.EXPIRING;
-        } else {
-          newStatus = FoodStatus.FRESH;
-        }
-
-        // Update status if it has changed
-        if (newStatus !== item.status) {
-          item.status = newStatus;
-          await item.save();
-        }
-
-        return {
-          id: item._id,
-          name: item.name,
-          category: item.category,
-          quantity: item.quantity,
-          unit: item.unit,
-          addedAt: item.addedAt,
-          expiryDate: item.expiryDate,
-          status: item.status,
-          ownerId: item.ownerId,
-          daysUntilExpiry: Math.ceil(daysDiff),
-        };
-      })
-    );
+      return {
+        id: item._id,
+        name: item.name,
+        category: item.category,
+        quantity: item.quantity,
+        unit: item.unit,
+        addedAt: item.addedAt,
+        expiryDate: item.expiryDate,
+        ownerId: item.ownerId,
+        daysUntilExpiry: Math.ceil(daysDiff),
+      };
+    });
 
     const response: ApiResponse = {
       success: true,

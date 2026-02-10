@@ -1,7 +1,6 @@
 import app from './app';
 import config from './config';
 import { connectDB, disconnectDB } from './config/db';
-import { startExpiryCheckCron } from './services/expiry.service';
 import logger from './utils/logger';
 
 // Initialize database and start server
@@ -9,9 +8,6 @@ const startServer = async () => {
   try {
     // Connect to MongoDB
     await connectDB();
-
-    // Start background cron jobs
-    startExpiryCheckCron();
 
     // Start Express server - Listen on all network interfaces for physical device access
     const server = app.listen(config.port, '0.0.0.0', () => {

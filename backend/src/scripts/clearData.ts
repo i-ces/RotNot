@@ -1,6 +1,7 @@
 import { connectDB, disconnectDB } from '../config/db';
 import UserProfile from '../models/userProfile.model';
 import FoodItem from '../models/foodItem.model';
+import DonatedFood from '../models/donatedFood.model';
 import Donation from '../models/donation.model';
 import FoodBank from '../models/foodBank.model';
 import logger from '../utils/logger';
@@ -12,6 +13,7 @@ const clearDatabase = async () => {
     
     await UserProfile.deleteMany({});
     await FoodItem.deleteMany({});
+    await DonatedFood.deleteMany({});
     await Donation.deleteMany({});
     await FoodBank.deleteMany({});
     
