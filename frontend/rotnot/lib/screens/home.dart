@@ -498,12 +498,12 @@ class _HomeState extends State<Home> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            accentGreen.withOpacity(0.15),
-            accentGreen.withOpacity(0.05),
+            accentGreen.withOpacity(0.08),
+            accentGreen.withOpacity(0.02),
           ],
         ),
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: accentGreen.withOpacity(0.2)),
+        border: Border.all(color: accentGreen.withOpacity(0.1)),
       ),
       child: Column(
         children: [
@@ -605,12 +605,12 @@ class _HomeState extends State<Home> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF3498DB).withOpacity(0.15),
-            const Color(0xFF3498DB).withOpacity(0.05),
+            const Color(0xFF3498DB).withOpacity(0.08),
+            const Color(0xFF3498DB).withOpacity(0.02),
           ],
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFF3498DB).withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFF3498DB).withOpacity(0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
