@@ -99,7 +99,7 @@ class _ShelfScreenState extends State<ShelfScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _loadFoodItems();
 
     // Listen to focus changes to hide/show FAB in main.dart
@@ -426,7 +426,6 @@ class _ShelfScreenState extends State<ShelfScreen>
                 _buildTab('Fresh', _freshCount),
                 _buildTab('Expiring', _expiringCount),
                 _buildTab('Expired', _expiredCount),
-                _buildTab('Donated', _donatedCount),
               ],
             ),
           ),
@@ -440,7 +439,6 @@ class _ShelfScreenState extends State<ShelfScreen>
                 _buildItemList(_freshItems),
                 _buildItemList(_expiringItems),
                 _buildItemList(_expiredItems),
-                _buildItemList(_donatedItems),
               ],
             ),
           ),
