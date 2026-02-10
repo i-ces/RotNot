@@ -44,6 +44,9 @@ class _HomeState extends State<Home> {
   // Community champion
   Map<String, dynamic>? _champion;
 
+  // Notifications read state
+  bool _notificationsRead = false;
+
   @override
   void initState() {
     super.initState();
@@ -128,7 +131,9 @@ class _HomeState extends State<Home> {
       if (foodItems != null) {
         _totalItemsDonated += foodItems.length;
 
-        if (status == 'accepted' || status == 'completed' || status == 'picked_up') {
+        if (status == 'accepted' ||
+            status == 'completed' ||
+            status == 'picked_up') {
           for (var fi in foodItems) {
             donatedItems.add({
               'quantity': fi['quantity'] ?? 1,
@@ -776,14 +781,21 @@ class _HomeState extends State<Home> {
   }
 
   Widget _buildNotificationBell() {
-    final totalAlerts = _expiringSoon + _expired;
+    final totalAlerts = _notificationsRead ? 0 : (_expiringSoon + _expired);
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const ExpiringItemsScreen()),
         );
+
+        // If user marked as read in expiring items screen
+        if (result == true) {
+          setState(() {
+            _notificationsRead = true;
+          });
+        }
       },
       child: Container(
         padding: const EdgeInsets.all(12),
