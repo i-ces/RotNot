@@ -1,16 +1,26 @@
-# rotnot
+# RotNot - Frontend
 
-A new Flutter project.
+## Prerequisites
 
-## Getting Started
+- Flutter SDK (3.10.8 or higher)
+- Dart SDK
+- Android Studio / Xcode (for mobile development)
+- Firebase project configuration
 
-This project is a starting point for a Flutter application.
 
-A few resources to get you started if this is your first Flutter project:
+## Key Features
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- Firebase Authentication
+- Food detection via camera
+- Location-based food bank mapping
+- Food donation management
+- Push notifications for expiry alerts
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Tech Stack
+
+- Flutter & Dart
+- Firebase (Auth)
+- Flutter Map with OpenStreetMap
+- Camera & Image Picker
+- Geolocator for location services
+- Local notifications
