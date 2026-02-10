@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'dart:math' show cos, sin, asin, sqrt;
 import '../main.dart';
 import '../services/location_service.dart';
+import '../services/api_service.dart';
 import 'shelf.dart';
 
 // ─── Food Bank model ────────────────────────────────────────────────────────
@@ -53,98 +55,19 @@ class FoodBank {
   }
 }
 
-// ─── Sample food banks ──────────────────────────────────────────────────────
-
-const _sampleFoodBanks = <FoodBank>[
-  FoodBank(
-    id: '1',
-    name: 'Kathmandu Community Fridge',
-    distance: '0.8 km away',
-    openUntil: '8:00 PM',
-    type: FoodBankType.community,
-    address: 'Thamel, Kathmandu',
-    lat: 27.7172,
-    lng: 85.3240,
-  ),
-  FoodBank(
-    id: '2',
-    name: 'Patan Food Bank',
-    distance: '1.5 km away',
-    openUntil: '6:00 PM',
-    type: FoodBankType.charity,
-    address: 'Mangalbazar, Lalitpur',
-    lat: 27.6727,
-    lng: 85.3286,
-  ),
-  FoodBank(
-    id: '3',
-    name: 'Bhaktapur Shelter Kitchen',
-    distance: '3.2 km away',
-    openUntil: '9:00 PM',
-    type: FoodBankType.shelter,
-    address: 'Durbar Square, Bhaktapur',
-    lat: 27.6722,
-    lng: 85.4298,
-  ),
-  FoodBank(
-    id: '4',
-    name: 'Balaju Community Center',
-    distance: '4.0 km away',
-    openUntil: '5:00 PM',
-    type: FoodBankType.community,
-    address: 'Balaju, Kathmandu',
-    lat: 27.7350,
-    lng: 85.3050,
-  ),
-];
-
-// ─── Sample expiring items (shared with shelf concept) ──────────────────────
-
-List<FoodItem> _expiringFoodItems() {
-  final now = DateTime.now();
-  return [
-    FoodItem(
-      id: 'd1',
-      name: 'Organic Whole Milk',
-      addedDate: now.subtract(const Duration(days: 3)),
-      expiryDate: now.add(const Duration(days: 2)),
-      quantity: 1,
-      unit: 'litre',
-    ),
-    FoodItem(
-      id: 'd2',
-      name: 'Sourdough Loaf',
-      addedDate: now.subtract(const Duration(days: 2)),
-      expiryDate: now.add(const Duration(days: 1)),
-      quantity: 1,
-      unit: 'unit',
-    ),
-    FoodItem(
-      id: 'd3',
-      name: 'Fresh Baby Spinach',
-      addedDate: now.subtract(const Duration(days: 4)),
-      expiryDate: now,
-      quantity: 200,
-      unit: 'g',
-    ),
-    FoodItem(
-      id: 'd4',
-      name: 'Yogurt Cup',
-      addedDate: now.subtract(const Duration(days: 5)),
-      expiryDate: now.add(const Duration(days: 1)),
-      quantity: 2,
-      unit: 'cups',
-    ),
-    FoodItem(
-      id: 'd5',
-      name: 'Sliced Bread',
-      addedDate: now.subtract(const Duration(days: 3)),
-      expiryDate: now.add(const Duration(days: 3)),
-      quantity: 1,
-      unit: 'pack',
-    ),
-  ];
+// Helper to calculate distance between two points (Haversine formula)
+double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+  const double earthRadius = 6371; // km
+  final dLat = _toRadians(lat2 - lat1);
+  final dLon = _toRadians(lon2 - lon1);
+  final a = sin(dLat / 2) * sin(dLat / 2) +
+      cos(_toRadians(lat1)) * cos(_toRadians(lat2)) *
+      sin(dLon / 2) * sin(dLon / 2);
+  final c = 2 * asin(sqrt(a));
+  return earthRadius * c;
 }
+
+double _toRadians(double degree) => degree * 3.141592653589793 / 180;
 
 // ─── Donation Screen ────────────────────────────────────────────────────────
 
@@ -157,7 +80,6 @@ class DonationScreen extends StatefulWidget {
 
 class _DonationScreenState extends State<DonationScreen> {
   FoodBank? _selectedBank;
-  bool _showListView = true;
 
   // Location state
   double _userLat = LocationService.defaultLat;
@@ -165,10 +87,21 @@ class _DonationScreenState extends State<DonationScreen> {
   bool _loadingLocation = true;
   bool _locationDenied = false;
 
+  // Food banks state
+  List<FoodBank> _foodBanks = [];
+  bool _loadingFoodBanks = true;
+  String? _foodBanksError;
+
+  // Food items state
+  List<FoodItem> _foodItems = [];
+  bool _loadingFoodItems = false;
+  String? _foodItemsError;
+
   @override
   void initState() {
     super.initState();
     _fetchLocation();
+    _loadFoodBanks();
   }
 
   Future<void> _fetchLocation() async {
@@ -193,6 +126,198 @@ class _DonationScreenState extends State<DonationScreen> {
           _locationDenied = true;
         });
       }
+    }
+  }
+
+  Future<void> _loadFoodBanks() async {
+    try {
+      setState(() {
+        _loadingFoodBanks = true;
+        _foodBanksError = null;
+      });
+
+      final response = await ApiService.getAllFoodBanks();
+      
+      final banks = response.map<FoodBank>((item) {
+        final coords = item['location']['coordinates'] as List;
+        final lng = coords[0] as double;
+        final lat = coords[1] as double;
+        
+        // Calculate distance from user
+        final distance = _calculateDistance(_userLat, _userLng, lat, lng);
+        final distanceStr = distance < 1 
+            ? '${(distance * 1000).toStringAsFixed(0)} m away'
+            : '${distance.toStringAsFixed(1)} km away';
+        
+        // Parse type
+        FoodBankType type;
+        switch (item['type']) {
+          case 'charity':
+            type = FoodBankType.charity;
+            break;
+          case 'shelter':
+            type = FoodBankType.shelter;
+            break;
+          default:
+            type = FoodBankType.community;
+        }
+        
+        return FoodBank(
+          id: item['_id'] as String,
+          name: item['name'] as String,
+          address: item['address'] as String,
+          distance: distanceStr,
+          openUntil: item['openUntil'] as String?,
+          type: type,
+          lat: lat,
+          lng: lng,
+        );
+      }).toList();
+
+      // Sort by distance
+      banks.sort((a, b) {
+        final distA = _calculateDistance(_userLat, _userLng, a.lat, a.lng);
+        final distB = _calculateDistance(_userLat, _userLng, b.lat, b.lng);
+        return distA.compareTo(distB);
+      });
+
+      if (mounted) {
+        setState(() {
+          _foodBanks = banks;
+          _loadingFoodBanks = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _foodBanksError = e.toString();
+          _loadingFoodBanks = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadFoodItems() async {
+    try {
+      setState(() {
+        _loadingFoodItems = true;
+        _foodItemsError = null;
+      });
+
+      final response = await ApiService.getFoodItems();
+      
+      print('Loaded ${response.length} food items from API');
+      if (response.isNotEmpty) {
+        print('Sample item data: ${response.first}');
+      }
+      
+      // Filter out items that are already donated or consumed at the backend level
+      final availableItems = response.where((item) {
+        final backendStatus = item['status'] as String?;
+        return backendStatus != 'donated' && backendStatus != 'consumed';
+      }).toList();
+      
+      print('After filtering backend status: ${availableItems.length} items');
+      
+      final items = <FoodItem>[];
+      
+      for (var i = 0; i < availableItems.length; i++) {
+        try {
+          final item = availableItems[i];
+          
+          // Safely extract ID (backend might return 'id' or '_id')
+          final id = item['id']?.toString() ?? item['_id']?.toString();
+          if (id == null || id.isEmpty) {
+            print('Skipping item $i: missing id/_id. Keys: ${item.keys}');
+            continue;
+          }
+          
+          // Safely extract name
+          final name = item['name']?.toString() ?? 'Unknown Item';
+          
+          // Parse dates safely with fallbacks
+          DateTime addedDate;
+          try {
+            final addedAtStr = item['addedAt']?.toString();
+            addedDate = addedAtStr != null 
+                ? DateTime.parse(addedAtStr)
+                : DateTime.now();
+          } catch (e) {
+            print('Failed to parse addedAt for ${item['name']}: $e');
+            addedDate = DateTime.now();
+          }
+
+          DateTime expiryDate;
+          try {
+            final expiryDateStr = item['expiryDate']?.toString();
+            expiryDate = expiryDateStr != null
+                ? DateTime.parse(expiryDateStr)
+                : DateTime.now().add(const Duration(days: 7));
+          } catch (e) {
+            print('Failed to parse expiryDate for ${item['name']}: $e');
+            expiryDate = DateTime.now().add(const Duration(days: 7));
+          }
+          
+          // Safely extract quantity
+          int quantity = 1;
+          try {
+            if (item['quantity'] != null) {
+              quantity = (item['quantity'] as num).toInt();
+            }
+          } catch (e) {
+            print('Failed to parse quantity for ${item['name']}: $e');
+          }
+          
+          // Safely extract unit
+          final unit = item['unit']?.toString() ?? 'unit';
+          
+          // Safely extract notes
+          final notes = item['notes']?.toString();
+
+          items.add(FoodItem(
+            id: id,
+            name: name,
+            addedDate: addedDate,
+            expiryDate: expiryDate,
+            quantity: quantity,
+            unit: unit,
+            notes: notes,
+          ));
+        } catch (e) {
+          print('Error parsing item $i: $e');
+          continue;
+        }
+      }
+      
+      print('Successfully parsed ${items.length} items');
+
+      // Filter to only show fresh and expiring items (not expired)
+      final donateableItems = items.where((item) {
+        final status = item.status;
+        final isDonatable = status == FoodStatus.fresh || status == FoodStatus.expiring;
+        return isDonatable;
+      }).toList();
+
+      print('Filtered to ${donateableItems.length} donateable items (fresh or expiring, not expired)');
+      for (var item in donateableItems) {
+        print(' - ${item.name}: ${item.status}, expires in ${item.daysLeft} days');
+      }
+
+      if (mounted) {
+        setState(() {
+          _foodItems = donateableItems;
+          _loadingFoodItems = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _foodItemsError = 'Error: $e';
+          _loadingFoodItems = false;
+        });
+      }
+      // Print for debugging
+      print('Error loading food items: $e');
     }
   }
 
@@ -223,7 +348,49 @@ class _DonationScreenState extends State<DonationScreen> {
           const SizedBox(height: 16),
 
           // ── Food bank list ──
-          ..._sampleFoodBanks.map((bank) => _buildFoodBankCard(bank)),
+          if (_loadingFoodBanks)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32.0),
+                child: CircularProgressIndicator(color: MyApp.accentGreen),
+              ),
+            )
+          else if (_foodBanksError != null)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  children: [
+                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Failed to load food banks',
+                      style: TextStyle(color: Colors.white.withOpacity(0.7)),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _loadFoodBanks,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: MyApp.accentGreen,
+                      ),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else if (_foodBanks.isEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Text(
+                  'No food banks available',
+                  style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                ),
+              ),
+            )
+          else
+            ..._foodBanks.map((bank) => _buildFoodBankCard(bank)),
         ],
       ),
     );
@@ -285,27 +452,6 @@ class _DonationScreenState extends State<DonationScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // ─── View toggle ──────────────────────────────────────────────────────────
-
-  Widget _viewToggle(IconData icon, bool isListView) {
-    final isActive = _showListView == isListView;
-    return GestureDetector(
-      onTap: () => setState(() => _showListView = isListView),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isActive
-              ? MyApp.accentGreen.withOpacity(0.2)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon,
-            size: 18,
-            color: isActive ? MyApp.accentGreen : Colors.white38),
       ),
     );
   }
@@ -387,7 +533,7 @@ class _DonationScreenState extends State<DonationScreen> {
                     ),
                   ),
                   // Food bank markers
-                  ..._sampleFoodBanks.map((bank) => Marker(
+                  ..._foodBanks.map((bank) => Marker(
                         point: LatLng(bank.lat, bank.lng),
                         width: 36,
                         height: 36,
@@ -602,8 +748,41 @@ class _DonationScreenState extends State<DonationScreen> {
 
   // ─── Item selection bottom sheet (shows after selecting a food bank) ─────
 
-  void _showItemSelectionSheet(FoodBank bank) {
-    final items = _expiringFoodItems();
+  Future<void> _showItemSelectionSheet(FoodBank bank) async {
+    // Load food items if not already loaded or if there was an error
+    if ((_foodItems.isEmpty || _foodItemsError != null) && !_loadingFoodItems) {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(color: MyApp.accentGreen),
+        ),
+      );
+
+      await _loadFoodItems();
+
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        
+        // Check if loading failed
+        if (_foodItemsError != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to load food items: $_foodItemsError'),
+              backgroundColor: Colors.red,
+              action: SnackBarAction(
+                label: 'Retry',
+                textColor: Colors.white,
+                onPressed: () => _showItemSelectionSheet(bank),
+              ),
+            ),
+          );
+          return;
+        }
+      }
+    }
+
     final selected = <String>{};
 
     showModalBottomSheet(
@@ -614,7 +793,7 @@ class _DonationScreenState extends State<DonationScreen> {
         return StatefulBuilder(
           builder: (context, setSheetState) {
             final expiringCount =
-                items.where((i) => i.status != FoodStatus.fresh).length;
+                _foodItems.where((i) => i.status != FoodStatus.fresh).length;
 
             return Container(
               constraints: BoxConstraints(
@@ -699,15 +878,50 @@ class _DonationScreenState extends State<DonationScreen> {
 
                   // Item list
                   Flexible(
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: items.length,
-                      itemBuilder: (context, index) {
-                        final item = items[index];
-                        final isChecked = selected.contains(item.id);
+                    child: _foodItems.isEmpty
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(32.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.inbox_outlined,
+                                    size: 48,
+                                    color: Colors.white.withOpacity(0.3),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No items available for donation',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.5),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Add items to your shelf first',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.3),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            physics: const BouncingScrollPhysics(),
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            itemCount: _foodItems.length,
+                            addAutomaticKeepAlives: false,
+                            addRepaintBoundaries: true,
+                            itemBuilder: (context, index) {
+                              final item = _foodItems[index];
+                              final isChecked = selected.contains(item.id);
 
-                        return Container(
+                              return Container(
                           margin: const EdgeInsets.only(bottom: 10),
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 14),
@@ -819,9 +1033,9 @@ class _DonationScreenState extends State<DonationScreen> {
                             ? null
                             : () {
                                 Navigator.pop(context);
-                                _showPickupConfirmation(
+                                _submitDonation(
                                   bank,
-                                  items
+                                  _foodItems
                                       .where(
                                           (i) => selected.contains(i.id))
                                       .toList(),
@@ -868,6 +1082,51 @@ class _DonationScreenState extends State<DonationScreen> {
         );
       },
     );
+  }
+
+  // ─── Submit donation ──────────────────────────────────────────────────────
+
+  Future<void> _submitDonation(FoodBank bank, List<FoodItem> items) async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: MyApp.accentGreen),
+      ),
+    );
+
+    try {
+      final donationData = {
+        'foodBankId': bank.id,
+        'foodItems': items.map((item) => {
+          'foodItemId': item.id,
+          'quantity': item.quantity,
+          'unit': item.unit,
+        }).toList(),
+        'notes': 'Scheduled via RotNot app',
+      };
+
+      await ApiService.createDonation(donationData);
+
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        _showPickupConfirmation(bank, items);
+        
+        // Reload food items to update the list
+        _loadFoodItems();
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create donation: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   // ─── Pickup confirmation dialog ───────────────────────────────────────────
