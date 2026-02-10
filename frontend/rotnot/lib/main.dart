@@ -127,8 +127,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
-      drawer: _buildSidebar(context),
       // FIX: Removed the Stack and Positioned IconButton that was overlapping content.
       // The body now only contains the IndexedStack.
       body: SafeArea(
@@ -165,100 +163,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildSidebar(BuildContext context) {
-    final user = AuthService.currentUser;
-    final displayName = user?.displayName ?? 'User';
-    final email = user?.email ?? 'No email';
-
-    return Drawer(
-      backgroundColor: MyApp.scaffoldBg,
-      child: Column(
-        children: [
-          UserAccountsDrawerHeader(
-            decoration: const BoxDecoration(color: MyApp.surfaceColor),
-            currentAccountPicture: const CircleAvatar(
-              backgroundColor: MyApp.accentGreen,
-              child: Icon(Icons.person, color: Colors.white, size: 40),
-            ),
-            accountName: Text(
-              displayName,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            accountEmail: Text(
-              email,
-              style: const TextStyle(color: Colors.white70),
-            ),
-          ),
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                _drawerItem(Icons.analytics_rounded, "Waste Analytics", () {}),
-                _drawerItem(Icons.restaurant_menu_rounded, "Smart Recipes", () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SmartRecipesPage(),
-                    ),
-                  );
-                }),
-                _drawerItem(
-                  Icons.notifications_active_rounded,
-                  "Expiry Alerts",
-                  () {},
-                ),
-                _drawerItem(Icons.history_rounded, "Donation History", () {}),
-                const Divider(color: Colors.white12, indent: 20, endIndent: 20),
-                _drawerItem(Icons.settings_rounded, "Settings", () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const SettingsScreen(),
-                    ),
-                  );
-                }),
-                _drawerItem(Icons.help_outline_rounded, "Help & Support", () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HelpScreen()),
-                  );
-                }),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 20),
-            child: _drawerItem(Icons.logout_rounded, "Logout", () async {
-              await AuthService.logout();
-              if (!context.mounted) return;
-              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-            }, color: Colors.redAccent),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _drawerItem(
-    IconData icon,
-    String title,
-    VoidCallback onTap, {
-    Color? color,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: color ?? Colors.white70, size: 24),
-      title: Text(
-        title,
-        style: TextStyle(color: color ?? Colors.white, fontSize: 15),
-      ),
-      onTap: onTap,
-      visualDensity: const VisualDensity(vertical: -2),
     );
   }
 

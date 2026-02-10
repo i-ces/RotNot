@@ -171,11 +171,8 @@ class _HomeState extends State<Home> {
                   children: [
                     // --- 0. TOP NAVIGATION ROW ---
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildMenuButton(context),
-                        _buildNotificationBell(),
-                      ],
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [_buildNotificationBell()],
                     ),
 
                     const SizedBox(height: 25),
@@ -739,21 +736,6 @@ class _HomeState extends State<Home> {
             textAlign: TextAlign.center,
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildMenuButton(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Scaffold.of(context).openDrawer(),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: surfaceColor,
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
-        ),
-        child: const Icon(Icons.menu_rounded, color: Colors.white, size: 26),
       ),
     );
   }
