@@ -3,11 +3,11 @@ import 'package:http/http.dart' as http;
 
 /// Service for AI-powered recipe generation
 class RecipeService {
-  // Recipe API runs on port 8001 (separate from food detection on 8000)
+  // Unified API (food detection + recipes) runs on port 8000
   // Physical Device: Use your computer's IP address
-  // Android Emulator: http://10.0.2.2:8001
-  // iOS Simulator: http://localhost:8001
-  static const String _recipeApiUrl = 'http://192.168.17.211:8001';
+  // Android Emulator: http://10.0.2.2:8000
+  // iOS Simulator: http://localhost:8000
+  static const String _recipeApiUrl = 'http://192.168.17.211:8000';
 
   /// Generate recipe name suggestions from ingredients
   static Future<RecipeSuggestionsResult> suggestRecipes({
