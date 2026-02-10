@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:rotnot/services/auth_service.dart';
 import 'package:rotnot/services/api_service.dart';
 import 'package:rotnot/screens/mycontributions.dart';
-import 'package:rotnot/screens/leaderboard.dart';
 import 'package:rotnot/screens/settings.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -90,27 +89,12 @@ class _ProfilePageState extends State<ProfilePage> {
         leadingWidth: 76,
         leading: Padding(
           padding: const EdgeInsets.only(left: 16),
-          child: Image.asset(
-            'assets/images/logo.png',
-            height: 60,
-            width: 60,
-          ),
+          child: Image.asset('assets/images/logo.png', height: 60, width: 60),
         ),
         title: const Text("Profile"),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_rounded),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
-            },
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
@@ -145,136 +129,25 @@ class _ProfilePageState extends State<ProfilePage> {
             _buildRoleBadge(),
             const SizedBox(height: 24),
 
-            // --- 2. YOUR RANKING CARD (Gateway to Leaderboard) ---
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "COMMUNITY STANDING",
-                style: TextStyle(
-                  color: Colors.white38,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const LeaderboardPage(),
-                ),
-              ),
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [accentGreen.withOpacity(0.2), surfaceColor],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: accentGreen.withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.emoji_events_rounded,
-                      color: accentGreen,
-                      size: 30,
-                    ),
-                    const SizedBox(width: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Current Rank",
-                          style: TextStyle(color: Colors.white60, fontSize: 12),
-                        ),
-                        Text(
-                          "#24 in Nepal",
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    const Text(
-                      "View All",
-                      style: TextStyle(
-                        color: accentGreen,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Icon(Icons.chevron_right_rounded, color: accentGreen),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // --- 3. COLLECTIONS TILES ---
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "COLLECTIONS",
-                style: TextStyle(
-                  color: Colors.white38,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
+            // --- OPTIONS LIST ---
             _buildOptionTile(
               context,
               Icons.card_giftcard_rounded,
               "My Contributions",
               const MyContributionsPage(),
             ),
-
-            const SizedBox(height: 32),
-
-            // --- 4. HELP & SUPPORT ---
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "SUPPORT",
-                style: TextStyle(
-                  color: Colors.white38,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                ),
-              ),
+            _buildOptionTile(
+              context,
+              Icons.settings_rounded,
+              "Settings",
+              const SettingsScreen(),
             ),
-            const SizedBox(height: 12),
             _buildHelpTile(
               context,
               Icons.help_outline_rounded,
               "Help & Support",
               "Get assistance and FAQs",
             ),
-
-            const SizedBox(height: 32),
-
-            // --- 5. LOGOUT BUTTON ---
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "ACCOUNT",
-                style: TextStyle(
-                  color: Colors.white38,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
             _buildLogoutButton(context),
 
             const SizedBox(height: 24),
