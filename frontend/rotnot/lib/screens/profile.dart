@@ -1,15 +1,84 @@
 import 'package:flutter/material.dart';
 import 'package:rotnot/services/auth_service.dart';
+import 'package:rotnot/services/api_service.dart';
 import 'package:rotnot/screens/savedrecipes.dart';
 import 'package:rotnot/screens/impactreport.dart';
 import 'package:rotnot/screens/mycontributions.dart';
-import 'package:rotnot/screens/leaderboard.dart'; // Ensure this import exists
+import 'package:rotnot/screens/leaderboard.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
   static const Color accentGreen = Color(0xFF2ECC71);
   static const Color surfaceColor = Color(0xFF1E1E1E);
+
+  String? _userRole;
+  bool _loadingRole = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserProfile();
+  }
+
+  Future<void> _fetchUserProfile() async {
+    try {
+      final profile = await ApiService.getUserProfile();
+      setState(() {
+        _userRole = profile['role'] as String?;
+        _loadingRole = false;
+      });
+    } catch (e) {
+      print('Failed to fetch user profile: $e');
+      setState(() {
+        _loadingRole = false;
+      });
+    }
+  }
+
+  String _getRoleLabel(String role) {
+    switch (role) {
+      case 'user':
+        return 'Individual User';
+      case 'organization':
+        return 'Organization';
+      case 'foodbank':
+        return 'Food Bank';
+      default:
+        return 'User';
+    }
+  }
+
+  IconData _getRoleIcon(String role) {
+    switch (role) {
+      case 'user':
+        return Icons.person;
+      case 'organization':
+        return Icons.business;
+      case 'foodbank':
+        return Icons.restaurant_menu;
+      default:
+        return Icons.person;
+    }
+  }
+
+  Color _getRoleColor(String role) {
+    switch (role) {
+      case 'user':
+        return const Color(0xFF3498DB);
+      case 'organization':
+        return const Color(0xFFF39C12);
+      case 'foodbank':
+        return accentGreen;
+      default:
+        return const Color(0xFF95A5A6);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +122,8 @@ class ProfilePage extends StatelessWidget {
               email,
               style: const TextStyle(color: Colors.white60, fontSize: 13),
             ),
+            const SizedBox(height: 16),
+            _buildRoleBadge(),
             const SizedBox(height: 24),
 
             // --- 2. YOUR RANKING CARD (Gateway to Leaderboard) ---
@@ -298,5 +369,57 @@ class ProfilePage extends StatelessWidget {
         }
       }
     }
+  }
+
+  Widget _buildRoleBadge() {
+    if (_loadingRole) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const SizedBox(
+          width: 12,
+          height: 12,
+          child: CircularProgressIndicator(strokeWidth: 2, color: accentGreen),
+        ),
+      );
+    }
+
+    if (_userRole == null) {
+      return const SizedBox.shrink();
+    }
+
+    final roleColor = _getRoleColor(_userRole!);
+    final roleIcon = _getRoleIcon(_userRole!);
+    final roleLabel = _getRoleLabel(_userRole!);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [roleColor.withOpacity(0.2), roleColor.withOpacity(0.05)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: roleColor.withOpacity(0.5), width: 1.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(roleIcon, color: roleColor, size: 18),
+          const SizedBox(width: 8),
+          Text(
+            roleLabel,
+            style: TextStyle(
+              color: roleColor,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

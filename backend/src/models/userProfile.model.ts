@@ -2,9 +2,8 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export enum UserRole {
   USER = 'user',
-  HOSTEL = 'hostel',
-  RESTAURANT = 'restaurant',
-  NGO = 'ngo',
+  ORGANIZATION = 'organization',
+  FOODBANK = 'foodbank',
 }
 
 export interface IUserProfile extends Document {
