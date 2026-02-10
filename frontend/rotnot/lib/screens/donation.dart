@@ -419,10 +419,6 @@ class _DonationScreenState extends State<DonationScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Banner ──
-            _buildBanner(),
-            const SizedBox(height: 24),
-
             // ── My Donations Section ──
             if (_donorDonations.isNotEmpty) ...[
               Row(
@@ -745,66 +741,6 @@ class _DonationScreenState extends State<DonationScreen> {
         _loadingFoodItems = false;
       });
     }
-  }
-
-  // ─── Banner ───────────────────────────────────────────────────────────────
-
-  Widget _buildBanner() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            MyApp.accentGreen.withOpacity(0.25),
-            MyApp.accentGreen.withOpacity(0.08),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: MyApp.accentGreen.withOpacity(0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: MyApp.accentGreen.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: const Text(
-              'COMMUNITY ACTION',
-              style: TextStyle(
-                color: MyApp.accentGreen,
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Reduce Waste,\nFeed the Soul.',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              height: 1.3,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Donate surplus food to people in need',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
-              fontSize: 13,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildFoodBankBanner() {
