@@ -4,6 +4,7 @@ import 'package:rotnot/services/auth_service.dart';
 import 'package:rotnot/services/api_service.dart';
 import 'package:rotnot/screens/leaderboard.dart';
 import 'package:rotnot/screens/smartrecipe.dart';
+import 'package:rotnot/screens/expiring_items.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -741,20 +742,31 @@ class _HomeState extends State<Home> {
   }
 
   Widget _buildNotificationBell() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
-      ),
-      child: const Badge(
-        label: Text("3"),
-        backgroundColor: accentRed,
-        child: Icon(
-          Icons.notifications_none_rounded,
-          color: Colors.white,
-          size: 26,
+    final totalAlerts = _expiringSoon + _expired;
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ExpiringItemsScreen()),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+        ),
+        child: Badge(
+          label: Text('$totalAlerts'),
+          backgroundColor: totalAlerts > 0 ? accentRed : Colors.grey,
+          isLabelVisible: totalAlerts > 0,
+          child: const Icon(
+            Icons.notifications_none_rounded,
+            color: Colors.white,
+            size: 26,
+          ),
         ),
       ),
     );

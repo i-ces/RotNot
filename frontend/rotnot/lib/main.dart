@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'services/auth_service.dart';
+import 'services/notification_service.dart';
 
 // Import all your screen files
 import 'screens/login.dart';
@@ -20,10 +21,22 @@ import 'screens/smartrecipe.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   // Firebase is not supported on Linux/Windows/macOS desktop
   if (!Platform.isLinux && !Platform.isWindows && !Platform.isMacOS) {
     await Firebase.initializeApp();
   }
+
+  // Initialize notification service
+  await NotificationService.instance.initialize();
+
+  // Request notification permissions
+  final hasPermission = await NotificationService.instance.requestPermissions();
+  if (hasPermission) {
+    // Reschedule any notifications that were lost after device reboot
+    await NotificationService.instance.rescheduleAllNotifications();
+  }
+
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
