@@ -14,49 +14,125 @@ class _ExpiringItemsScreenState extends State<ExpiringItemsScreen> {
   static const Color accentRed = Color(0xFFE74C3C);
   static const Color surfaceColor = Color(0xFF1E1E1E);
 
-  List<Map<String, dynamic>> _expiringItems = [];
-  List<Map<String, dynamic>> _expiredItems = [];
+  List<Map<String, dynamic>> _notifications = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadItems();
+    _loadNotifications();
   }
 
-  Future<void> _loadItems() async {
+  Future<void> _loadNotifications() async {
     setState(() => _isLoading = true);
     try {
       final items = await ApiService.getFoodItems();
+      final donations = await ApiService.getDonations();
       final now = DateTime.now();
 
-      final expiring = <Map<String, dynamic>>[];
-      final expired = <Map<String, dynamic>>[];
+      final notifications = <Map<String, dynamic>>[];
 
+      // Add expiring food notifications
       for (var item in items) {
         if (item['expiryDate'] != null) {
           final expiryDate = DateTime.parse(item['expiryDate']);
           final daysLeft = expiryDate.difference(now).inDays;
 
-          if (daysLeft < 0) {
-            expired.add({...item, 'daysLeft': daysLeft});
-          } else if (daysLeft <= 3) {
-            expiring.add({...item, 'daysLeft': daysLeft});
+          if (daysLeft <= 3) {
+            notifications.add({
+              'type': 'expiring',
+              'title': item['name'] ?? 'Unknown Item',
+              'message': daysLeft < 0
+                  ? 'Expired ${daysLeft.abs()} day${daysLeft.abs() == 1 ? '' : 's'} ago'
+                  : daysLeft == 0
+                  ? 'Expires today!'
+                  : daysLeft == 1
+                  ? 'Expires tomorrow'
+                  : 'Expires in $daysLeft days',
+              'category': item['category'] ?? 'Other',
+              'daysLeft': daysLeft,
+              'icon': Icons.warning_amber_rounded,
+              'color': daysLeft < 0
+                  ? accentRed
+                  : daysLeft == 0
+                  ? accentRed
+                  : daysLeft == 1
+                  ? accentOrange
+                  : accentOrange.withOpacity(0.7),
+              'time': expiryDate,
+            });
           }
         }
       }
 
-      // Sort by days left (most urgent first)
-      expiring.sort((a, b) => a['daysLeft'].compareTo(b['daysLeft']));
-      expired.sort((a, b) => a['daysLeft'].compareTo(b['daysLeft']));
+      // Add donation notifications (recent ones)
+      for (var donation in donations) {
+        final createdAt = donation['createdAt'] != null
+            ? DateTime.parse(donation['createdAt'])
+            : null;
+
+        if (createdAt != null) {
+          final daysSince = now.difference(createdAt).inDays;
+
+          // Only show notifications from last 7 days
+          if (daysSince <= 7) {
+            final status =
+                donation['status']?.toString().toLowerCase() ?? 'pending';
+            final foodItemsCount =
+                (donation['foodItems'] as List?)?.length ?? 0;
+
+            String message = '';
+            Color color = accentGreen;
+            IconData icon = Icons.info_outline;
+
+            if (status == 'accepted' || status == 'completed') {
+              message =
+                  'Your donation of $foodItemsCount item${foodItemsCount == 1 ? '' : 's'} was accepted';
+              color = accentGreen;
+              icon = Icons.check_circle_outline;
+            } else if (status == 'picked_up') {
+              message =
+                  'Your donation of $foodItemsCount item${foodItemsCount == 1 ? '' : 's'} was picked up';
+              color = accentGreen;
+              icon = Icons.local_shipping_outlined;
+            } else if (status == 'pending') {
+              message =
+                  'Donation of $foodItemsCount item${foodItemsCount == 1 ? '' : 's'} is pending';
+              color = accentOrange;
+              icon = Icons.pending_outlined;
+            } else if (status == 'rejected') {
+              message = 'Your donation request was declined';
+              color = accentRed;
+              icon = Icons.cancel_outlined;
+            }
+
+            notifications.add({
+              'type': 'donation',
+              'title':
+                  '${status[0].toUpperCase()}${status.substring(1)} Donation',
+              'message': message,
+              'category': 'Donation',
+              'icon': icon,
+              'color': color,
+              'time': createdAt,
+            });
+          }
+        }
+      }
+
+      // Sort by time (most recent first)
+      notifications.sort((a, b) {
+        final timeA = a['time'] as DateTime;
+        final timeB = b['time'] as DateTime;
+        return timeB.compareTo(timeA);
+      });
 
       setState(() {
-        _expiringItems = expiring;
-        _expiredItems = expired;
+        _notifications = notifications;
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading items: $e');
+      print('Error loading notifications: $e');
       setState(() => _isLoading = false);
     }
   }
@@ -73,50 +149,51 @@ class _ExpiringItemsScreenState extends State<ExpiringItemsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Expiring Items',
+          'Notifications',
           style: TextStyle(
             color: Colors.white,
             fontSize: 22,
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          if (_notifications.isNotEmpty)
+            TextButton.icon(
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
+              icon: const Icon(
+                Icons.check_circle_outline,
+                color: accentGreen,
+                size: 20,
+              ),
+              label: const Text(
+                'Mark as read',
+                style: TextStyle(
+                  color: accentGreen,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: accentGreen))
           : RefreshIndicator(
               color: accentGreen,
               backgroundColor: surfaceColor,
-              onRefresh: _loadItems,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (_expiringItems.isEmpty && _expiredItems.isEmpty)
-                      _buildEmptyState(),
-                    if (_expiringItems.isNotEmpty) ...[
-                      _buildSectionHeader(
-                        '⚠️ Expiring Soon',
-                        _expiringItems.length,
-                        accentOrange,
-                      ),
-                      const SizedBox(height: 12),
-                      ..._expiringItems.map(_buildItemCard),
-                      const SizedBox(height: 24),
-                    ],
-                    if (_expiredItems.isNotEmpty) ...[
-                      _buildSectionHeader(
-                        '❌ Expired',
-                        _expiredItems.length,
-                        accentRed,
-                      ),
-                      const SizedBox(height: 12),
-                      ..._expiredItems.map(_buildItemCard),
-                    ],
-                  ],
-                ),
-              ),
+              onRefresh: _loadNotifications,
+              child: _notifications.isEmpty
+                  ? _buildEmptyState()
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(20),
+                      itemCount: _notifications.length,
+                      itemBuilder: (context, index) {
+                        return _buildNotificationCard(_notifications[index]);
+                      },
+                    ),
             ),
     );
   }
@@ -150,7 +227,7 @@ class _ExpiringItemsScreenState extends State<ExpiringItemsScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'No items expiring soon',
+            'No notifications',
             style: TextStyle(
               color: Colors.white.withOpacity(0.5),
               fontSize: 16,
@@ -161,68 +238,25 @@ class _ExpiringItemsScreenState extends State<ExpiringItemsScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title, int count, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color.withOpacity(0.2), color.withOpacity(0.05)],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: color,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              '$count',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildNotificationCard(Map<String, dynamic> notification) {
+    final type = notification['type'] as String;
+    final title = notification['title']?.toString() ?? 'Notification';
+    final message = notification['message']?.toString() ?? '';
+    final category = notification['category']?.toString() ?? '';
+    final color = notification['color'] as Color;
+    final icon = notification['icon'] as IconData;
+    final time = notification['time'] as DateTime;
+    final now = DateTime.now();
+    final difference = now.difference(time);
 
-  Widget _buildItemCard(Map<String, dynamic> item) {
-    final name = item['name']?.toString() ?? 'Unknown Item';
-    final category = item['category']?.toString() ?? 'Other';
-    final daysLeft = item['daysLeft'] as int;
-    final isExpired = daysLeft < 0;
-
-    final color = isExpired
-        ? accentRed
-        : daysLeft == 0
-        ? accentRed
-        : daysLeft <= 1
-        ? accentOrange
-        : accentOrange.withOpacity(0.7);
-
-    final urgencyText = isExpired
-        ? 'Expired ${daysLeft.abs()} day${daysLeft.abs() == 1 ? '' : 's'} ago'
-        : daysLeft == 0
-        ? 'Expires today!'
-        : daysLeft == 1
-        ? 'Expires tomorrow'
-        : 'Expires in $daysLeft days';
+    String timeAgo;
+    if (difference.inMinutes < 60) {
+      timeAgo = '${difference.inMinutes}m ago';
+    } else if (difference.inHours < 24) {
+      timeAgo = '${difference.inHours}h ago';
+    } else {
+      timeAgo = '${difference.inDays}d ago';
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -240,8 +274,9 @@ class _ExpiringItemsScreenState extends State<ExpiringItemsScreen> {
         ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Item Icon
+          // Icon
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -250,56 +285,76 @@ class _ExpiringItemsScreenState extends State<ExpiringItemsScreen> {
               ),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(_getCategoryIcon(category), color: color, size: 28),
+            child: Icon(
+              type == 'expiring' ? _getCategoryIcon(category) : icon,
+              color: color,
+              size: 28,
+            ),
           ),
           const SizedBox(width: 16),
-          // Item Details
+          // Content
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      timeAgo,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.4),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
                 Text(
-                  name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                  message,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
                   ),
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  category,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
-                    fontSize: 13,
+                if (category.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: color.withOpacity(0.3)),
+                    ),
+                    child: Text(
+                      category,
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ],
-            ),
-          ),
-          // Urgency Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Text(
-              urgencyText,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-              ),
             ),
           ),
         ],
