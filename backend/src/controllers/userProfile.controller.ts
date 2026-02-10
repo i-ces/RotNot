@@ -20,11 +20,16 @@ export const createOrUpdateProfile = async (
       throw new AppError('User not authenticated', 401);
     }
 
-    const { role, name, phone, email } = req.body;
+    const { role, name, phone, email, foodBankId } = req.body;
 
     // Validate required fields
     if (!role || !name) {
       throw new AppError('Role and name are required', 400);
+    }
+
+    // Validate foodBankId for foodbank users
+    if (role === UserRole.FOODBANK && !foodBankId) {
+      throw new AppError('Food bank ID is required for food bank users', 400);
     }
 
     // Validate role enum
@@ -44,6 +49,7 @@ export const createOrUpdateProfile = async (
       userProfile.name = name;
       if (phone !== undefined) userProfile.phone = phone;
       if (email !== undefined) userProfile.email = email;
+      if (foodBankId !== undefined) userProfile.foodBankId = foodBankId;
       await userProfile.save();
     } else {
       // Create new profile
@@ -53,6 +59,7 @@ export const createOrUpdateProfile = async (
         name,
         phone,
         email,
+        ...(foodBankId && { foodBankId }), // Only include if provided
       });
     }
 
@@ -67,6 +74,7 @@ export const createOrUpdateProfile = async (
           name: userProfile.name,
           email: userProfile.email,
           phone: userProfile.phone,
+          foodBankId: userProfile.foodBankId,
           createdAt: userProfile.createdAt,
         },
       },
@@ -112,6 +120,7 @@ export const getMyProfile = async (
           name: userProfile.name,
           email: userProfile.email,
           phone: userProfile.phone,
+          foodBankId: userProfile.foodBankId,
           createdAt: userProfile.createdAt,
         },
       },

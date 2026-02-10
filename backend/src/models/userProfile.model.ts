@@ -2,9 +2,8 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export enum UserRole {
   USER = 'user',
-  HOSTEL = 'hostel',
-  RESTAURANT = 'restaurant',
-  NGO = 'ngo',
+  ORGANIZATION = 'organization',
+  FOODBANK = 'foodbank',
 }
 
 export interface IUserProfile extends Document {
@@ -13,6 +12,7 @@ export interface IUserProfile extends Document {
   name: string;
   email?: string;
   phone?: string;
+  foodBankId?: mongoose.Types.ObjectId;
   createdAt: Date;
 }
 
@@ -42,6 +42,13 @@ const userProfileSchema = new Schema<IUserProfile>(
     phone: {
       type: String,
       trim: true,
+    },
+    foodBankId: {
+      type: Schema.Types.ObjectId,
+      ref: 'FoodBank',
+      required: function(this: IUserProfile) {
+        return this.role === UserRole.FOODBANK;
+      },
     },
   },
   {
