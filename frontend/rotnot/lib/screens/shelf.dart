@@ -85,6 +85,7 @@ class _ShelfScreenState extends State<ShelfScreen>
   String? _error;
   String _searchQuery = '';
   final FocusNode _searchFocusNode = FocusNode();
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -109,7 +110,7 @@ class _ShelfScreenState extends State<ShelfScreen>
       setState(() {
         _items = items.map((item) {
           return FoodItem(
-            id: item['_id'] ?? '',
+            id: item['id'] ?? item['_id'] ?? '',
             name: item['name'] ?? '',
             addedDate: item['addedAt'] != null
                 ? DateTime.parse(item['addedAt'])
@@ -137,6 +138,7 @@ class _ShelfScreenState extends State<ShelfScreen>
   void dispose() {
     _tabController.dispose();
     _searchFocusNode.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -170,14 +172,76 @@ class _ShelfScreenState extends State<ShelfScreen>
   // ──────────────────────────────────────────────────────────────────────────
 
   void _deleteItem(String id) async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: MyApp.surfaceColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.delete_outline_rounded, color: Colors.red, size: 24),
+            SizedBox(width: 12),
+            Text(
+              'Delete Item?',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'This item will be permanently removed from your shelf.',
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 14,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.6),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text(
+              'Delete',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    // If user didn't confirm, return
+    if (confirmed != true) return;
+
     try {
+      print('Deleting item with ID: $id');
       await ApiService.deleteFoodItem(id);
       setState(() => _items.removeWhere((i) => i.id == id));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Item removed'),
-            backgroundColor: MyApp.surfaceColor,
+            backgroundColor: const Color(0xFFD32F2F),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
@@ -186,6 +250,7 @@ class _ShelfScreenState extends State<ShelfScreen>
         );
       }
     } catch (e) {
+      print('Delete error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -277,7 +342,18 @@ class _ShelfScreenState extends State<ShelfScreen>
       );
     }
 
-    return Column(
+    return PopScope(
+      canPop: !_searchFocusNode.hasFocus && _searchQuery.isEmpty,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          setState(() {
+            _searchController.clear();
+            _searchQuery = '';
+            _searchFocusNode.unfocus();
+          });
+        }
+      },
+      child: Column(
       children: [
         // ── Search bar (With SafeArea and increased padding) ──
         SafeArea(
@@ -285,6 +361,7 @@ class _ShelfScreenState extends State<ShelfScreen>
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 32, 16, 4),
             child: TextField(
+              controller: _searchController,
               focusNode: _searchFocusNode,
               onChanged: (v) => setState(() => _searchQuery = v),
               style: const TextStyle(color: Colors.white),
@@ -378,6 +455,7 @@ class _ShelfScreenState extends State<ShelfScreen>
             ),
           ),
       ],
+    ),
     );
   }
 
@@ -508,7 +586,9 @@ class _ShelfScreenState extends State<ShelfScreen>
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                padding: EdgeInsets.fromLTRB(
+                  24, 16, 24, 24 + MediaQuery.of(context).padding.bottom,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
