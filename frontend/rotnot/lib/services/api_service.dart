@@ -4,9 +4,11 @@ import 'auth_service.dart';
 
 class ApiService {
   // Physical Device: Use your computer's IP address
-  // Android Emulator: http://10.0.2.2:8000
-  // iOS Simulator: http://localhost:8000
-  static const String _baseUrl = 'http://10.210.210.194:8000';
+  // Android Emulator: http://10.0.2.2:3000
+  // iOS Simulator: http://localhost:3000
+  // Port 3000 = Node.js backend (food items, donations, etc.)
+  // Port 8000 = Python API (food detection only)
+  static const String _baseUrl = 'http://192.168.17.110:3000/api';
 
   /// Expose base URL for connection testing
   static String get baseUrl => _baseUrl;
