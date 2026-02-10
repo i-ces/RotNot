@@ -62,7 +62,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildSettingsTile(
               icon: Icons.info_outline_rounded,
               title: "About RotNot",
-              subtitle: "v1.0.1",
+              subtitle: "v1.0.0",
               onTap: () {},
             ),
 
