@@ -344,7 +344,7 @@ class _HomeState extends State<Home> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _champion?['userName'] ?? 'No champion yet',
+                    _champion?['name'] ?? 'No champion yet',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
