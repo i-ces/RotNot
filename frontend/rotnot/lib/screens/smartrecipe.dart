@@ -952,6 +952,10 @@ class _SmartRecipesPageState extends State<SmartRecipesPage> {
 
   /// Show full recipe details in a bottom sheet
   void _showRecipeDetails(String recipeName, String description) {
+    // Clean markdown symbols from the description
+    final cleanDescription = _cleanMarkdown(description);
+    final cleanRecipeName = _cleanMarkdown(recipeName);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: surfaceColor,
@@ -984,7 +988,7 @@ class _SmartRecipesPageState extends State<SmartRecipesPage> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      recipeName,
+                      cleanRecipeName,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 22,
@@ -1001,7 +1005,7 @@ class _SmartRecipesPageState extends State<SmartRecipesPage> {
                 controller: scrollController,
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
                 child: Text(
-                  description,
+                  cleanDescription,
                   style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 15,
