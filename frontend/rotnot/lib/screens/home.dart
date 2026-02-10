@@ -813,8 +813,7 @@ class RingPainter extends CustomPainter {
       ..color = color
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
-      ..strokeWidth = 5
-      ..maskFilter = const MaskFilter.blur(BlurStyle.solid, 3);
+      ..strokeWidth = 5;
     canvas.drawCircle(center, radius, bgPaint);
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
