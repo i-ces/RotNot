@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:RotNot/services/auth_service.dart';
 import 'package:RotNot/screens/help.dart';
-import 'package:RotNot/screens/notification_test.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -71,22 +70,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: "About RotNot",
               subtitle: "v1.0.0",
               onTap: () {},
-            ),
-
-            const SizedBox(height: 24),
-            _buildSectionHeader("Developer"),
-            _buildSettingsTile(
-              icon: Icons.science_outlined,
-              title: "🧪 Test Notifications",
-              subtitle: "Test expiry alerts in real-time",
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const NotificationTestScreen(),
-                  ),
-                );
-              },
             ),
 
             const SizedBox(height: 40),
