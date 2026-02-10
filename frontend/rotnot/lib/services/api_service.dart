@@ -125,6 +125,42 @@ class ApiService {
     }
   }
 
+  /// Create or update user profile
+  /// POST or PUT /api/users/profile
+  static Future<Map<String, dynamic>> createOrUpdateUserProfile({
+    required String role,
+    String? name,
+    String? email,
+    String? phone,
+  }) async {
+    final body = <String, dynamic>{'role': role};
+    if (name != null) body['name'] = name;
+    if (email != null) body['email'] = email;
+    if (phone != null) body['phone'] = phone;
+
+    // Try to update first (PUT), if fails try create (POST)
+    try {
+      final response = await put('/users/profile', body: body);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['data']['profile'] as Map<String, dynamic>;
+      }
+    } catch (e) {
+      // If update fails, try create
+    }
+
+    // Create new profile
+    final response = await post('/users/profile', body: body);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      return data['data']['profile'] as Map<String, dynamic>;
+    } else {
+      throw Exception(
+        'Failed to create/update profile: ${response.statusCode}',
+      );
+    }
+  }
+
   // ─── Food Items API ──────────────────────────────────────────────────────────
 
   /// Get all food items for the current user
