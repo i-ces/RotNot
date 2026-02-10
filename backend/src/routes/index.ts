@@ -5,6 +5,7 @@ import userRoutes from './user.routes';
 import foodRoutes from './food.routes';
 import donationRoutes from './donation.routes';
 import foodBankRoutes from './foodBank.routes';
+import foodDetectionRoutes from './foodDetection.routes';
 
 const router = Router();
 
@@ -22,6 +23,9 @@ router.use('/donations', donationRoutes);
 
 // Food bank routes (require Firebase authentication)
 router.use('/food-banks', foodBankRoutes);
+
+// Food detection routes (AI scanner)
+router.use('/food-detection', foodDetectionRoutes);
 
 // Protected routes (require Firebase authentication)
 router.use('/', protectedRoutes);
