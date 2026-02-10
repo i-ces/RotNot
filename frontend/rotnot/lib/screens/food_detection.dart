@@ -1,9 +1,9 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/food_detection_service.dart';
+import '../services/api_service.dart';
 
 class FoodDetectionScreen extends StatefulWidget {
   const FoodDetectionScreen({super.key});
@@ -22,6 +22,12 @@ class _FoodDetectionScreenState extends State<FoodDetectionScreen> {
   CameraController? _cameraController;
   File? _capturedImage;
   FoodDetectionResult? _detectionResult;
+
+  // Shelf items for matching detected food
+  List<Map<String, dynamic>> _shelfItems = [];
+  Map<String, Map<String, dynamic>> _matchedShelfItems =
+      {}; // food name -> shelf item
+  bool _isAddingToShelf = false;
 
   @override
   void initState() {
@@ -107,8 +113,16 @@ class _FoodDetectionScreenState extends State<FoodDetectionScreen> {
         _capturedImage = imageFile;
       });
 
-      // Send to API for detection
-      final result = await FoodDetectionService.detectFromFile(imageFile);
+      // Send to API for detection and fetch shelf items in parallel
+      final results = await Future.wait([
+        FoodDetectionService.detectFromFile(imageFile),
+        _fetchShelfItems(),
+      ]);
+
+      final result = results[0] as FoodDetectionResult;
+
+      // Match detected foods with shelf items
+      _matchDetectedWithShelf(result);
 
       setState(() {
         _detectionResult = result;
@@ -122,6 +136,298 @@ class _FoodDetectionScreenState extends State<FoodDetectionScreen> {
       setState(() => _isLoading = false);
       _showError('Capture failed: $e');
     }
+  }
+
+  Future<void> _fetchShelfItems() async {
+    try {
+      final items = await ApiService.getFoodItems();
+      _shelfItems = items.cast<Map<String, dynamic>>();
+    } catch (e) {
+      print('Error fetching shelf items: $e');
+      _shelfItems = [];
+    }
+  }
+
+  void _matchDetectedWithShelf(FoodDetectionResult result) {
+    _matchedShelfItems.clear();
+
+    for (final food in result.foods) {
+      final foodName = food.name.toLowerCase().trim();
+
+      // Find matching shelf item (exact match, case-insensitive)
+      for (final item in _shelfItems) {
+        final itemName = (item['name'] as String?)?.toLowerCase().trim() ?? '';
+        // Exact match only
+        if (itemName == foodName) {
+          _matchedShelfItems[food.name] = item;
+          break;
+        }
+      }
+    }
+  }
+
+  void _showAddToShelfSheet(DetectedFood food) {
+    final nameCtrl = TextEditingController(text: food.displayName);
+    final qtyCtrl = TextEditingController(text: food.count.toString());
+    final unitCtrl = TextEditingController(text: 'pcs');
+    final notesCtrl = TextEditingController();
+    DateTime expiryDate = DateTime.now().add(const Duration(days: 7));
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              decoration: const BoxDecoration(
+                color: surfaceColor,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  24,
+                  16,
+                  24,
+                  24 + MediaQuery.of(context).padding.bottom,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Text(food.emoji, style: const TextStyle(fontSize: 24)),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Add to Shelf',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    _sheetTextField(nameCtrl, 'Item name', Icons.label_rounded),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _sheetTextField(
+                            qtyCtrl,
+                            'Qty',
+                            Icons.numbers_rounded,
+                            isNumber: true,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _sheetTextField(
+                            unitCtrl,
+                            'Unit',
+                            Icons.straighten_rounded,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    GestureDetector(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: expiryDate,
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(
+                            const Duration(days: 730),
+                          ),
+                          builder: (ctx, child) {
+                            return Theme(
+                              data: ThemeData.dark().copyWith(
+                                colorScheme: const ColorScheme.dark(
+                                  primary: accentGreen,
+                                  surface: surfaceColor,
+                                ),
+                              ),
+                              child: child!,
+                            );
+                          },
+                        );
+                        if (picked != null) {
+                          setModalState(() => expiryDate = picked);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 16,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black26,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.calendar_today_rounded,
+                              color: Colors.white54,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Expires: ${_formatDate(expiryDate)}',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            const Spacer(),
+                            const Icon(
+                              Icons.edit_rounded,
+                              color: Colors.white24,
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    _sheetTextField(
+                      notesCtrl,
+                      'Notes (optional)',
+                      Icons.notes_rounded,
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          if (nameCtrl.text.trim().isEmpty) return;
+
+                          Navigator.pop(context);
+                          setState(() => _isAddingToShelf = true);
+
+                          try {
+                            final foodData = {
+                              'name': nameCtrl.text.trim(),
+                              'category': 'General',
+                              'quantity':
+                                  int.tryParse(qtyCtrl.text.trim()) ?? 1,
+                              'unit': unitCtrl.text.trim().isEmpty
+                                  ? 'pcs'
+                                  : unitCtrl.text.trim(),
+                              'expiryDate': expiryDate.toIso8601String(),
+                              if (notesCtrl.text.trim().isNotEmpty)
+                                'notes': notesCtrl.text.trim(),
+                            };
+
+                            final createdItem = await ApiService.createFoodItem(
+                              foodData,
+                            );
+
+                            _matchedShelfItems[food.name] = createdItem;
+                            _shelfItems.add(createdItem);
+
+                            setState(() => _isAddingToShelf = false);
+
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    '${nameCtrl.text.trim()} added to shelf!',
+                                  ),
+                                  backgroundColor: accentGreen,
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            setState(() => _isAddingToShelf = false);
+                            _showError('Failed to add: $e');
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: accentGreen,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Save to Shelf',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _sheetTextField(
+    TextEditingController ctrl,
+    String hint,
+    IconData icon, {
+    bool isNumber = false,
+  }) {
+    return TextField(
+      controller: ctrl,
+      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.white.withOpacity(0.35)),
+        prefixIcon: Icon(icon, color: Colors.white54, size: 20),
+        filled: true,
+        fillColor: Colors.black26,
+        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
   void _showError(String message) {
@@ -138,6 +444,7 @@ class _FoodDetectionScreenState extends State<FoodDetectionScreen> {
     setState(() {
       _capturedImage = null;
       _detectionResult = null;
+      _matchedShelfItems.clear();
     });
   }
 
@@ -150,14 +457,6 @@ class _FoodDetectionScreenState extends State<FoodDetectionScreen> {
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: [
-          if (_capturedImage != null)
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _resetScan,
-              tooltip: 'New Scan',
-            ),
-        ],
       ),
       body: Column(
         children: [
@@ -189,7 +488,7 @@ class _FoodDetectionScreenState extends State<FoodDetectionScreen> {
             ),
           ),
 
-          // --- DETECTION RESULTS (JSON Output) ---
+          // --- DETECTION RESULTS ---
           if (_detectionResult != null) _buildResultsSection(),
 
           // --- CAPTURE CONTROLS ---
@@ -327,46 +626,224 @@ class _FoodDetectionScreenState extends State<FoodDetectionScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-
-          // JSON Output
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.black26,
-              borderRadius: BorderRadius.circular(12),
+          // Food items if detected
+          if (result.hasFood) ...[
+            const SizedBox(height: 12),
+            Column(
+              children: result.foods
+                  .map((food) => _buildFoodCard(food))
+                  .toList(),
             ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFoodCard(DetectedFood food) {
+    final shelfItem = _matchedShelfItems[food.name];
+    final isInShelf = shelfItem != null;
+
+    // Parse expiry date if in shelf
+    DateTime? expiryDate;
+    int? daysLeft;
+    Color statusColor = accentGreen;
+    String statusText = '';
+
+    if (isInShelf && shelfItem['expiryDate'] != null) {
+      expiryDate = DateTime.parse(shelfItem['expiryDate']);
+      daysLeft = expiryDate.difference(DateTime.now()).inDays;
+
+      if (daysLeft < 0) {
+        statusColor = const Color(0xFFE74C3C); // Red
+        statusText = '${daysLeft.abs()}d overdue';
+      } else if (daysLeft == 0) {
+        statusColor = const Color(0xFFF39C12); // Orange
+        statusText = 'Expires today';
+      } else if (daysLeft <= 3) {
+        statusColor = const Color(0xFFF39C12); // Orange
+        statusText = '$daysLeft days left';
+      } else {
+        statusColor = accentGreen;
+        statusText = '$daysLeft days left';
+      }
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isInShelf
+            ? statusColor.withOpacity(0.1)
+            : Colors.grey.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isInShelf
+              ? statusColor.withOpacity(0.4)
+              : Colors.grey.withOpacity(0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Food emoji
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: (isInShelf ? statusColor : accentGreen).withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Text(food.emoji, style: const TextStyle(fontSize: 20)),
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          // Food info
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "JSON Output:",
-                  style: TextStyle(color: Colors.white54, fontSize: 11),
+                Row(
+                  children: [
+                    Text(
+                      food.displayName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: accentGreen.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        food.confidencePercent,
+                        style: const TextStyle(
+                          color: accentGreen,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  const JsonEncoder.withIndent('  ').convert(result.toJson()),
-                  style: const TextStyle(
-                    color: accentGreen,
-                    fontSize: 11,
-                    fontFamily: 'monospace',
+                const SizedBox(height: 4),
+                if (isInShelf) ...[
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.inventory_2_rounded,
+                        size: 12,
+                        color: statusColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'In Shelf',
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.access_time_rounded,
+                        size: 12,
+                        color: statusColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        statusText,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
+                ] else ...[
+                  Text(
+                    'Not in your shelf',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.5),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
 
-          // Food chips if detected
-          if (result.hasFood) ...[
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: result.foods
-                  .map((food) => _buildFoodChip(food))
-                  .toList(),
+          // Action button
+          if (!isInShelf)
+            GestureDetector(
+              onTap: _isAddingToShelf ? null : () => _showAddToShelfSheet(food),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: accentGreen,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: _isAddingToShelf
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.add_rounded,
+                            size: 16,
+                            color: Colors.black87,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Add',
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
             ),
-          ],
+
+          if (isInShelf)
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: statusColor.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                daysLeft != null && daysLeft < 0
+                    ? Icons.warning_rounded
+                    : daysLeft != null && daysLeft <= 3
+                    ? Icons.schedule_rounded
+                    : Icons.check_circle_rounded,
+                size: 20,
+                color: statusColor,
+              ),
+            ),
         ],
       ),
     );
@@ -454,27 +931,13 @@ class _FoodDetectionScreenState extends State<FoodDetectionScreen> {
   Widget _buildRetakeControls() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildActionButton(
-            icon: Icons.refresh,
-            label: "Retake",
-            onTap: _resetScan,
-          ),
-          _buildActionButton(
-            icon: Icons.camera_alt,
-            label: "Scan Again",
-            onTap: () {
-              _resetScan();
-              Future.delayed(
-                const Duration(milliseconds: 100),
-                _captureAndDetect,
-              );
-            },
-            isPrimary: true,
-          ),
-        ],
+      child: Center(
+        child: _buildActionButton(
+          icon: Icons.refresh,
+          label: "Retake",
+          onTap: _resetScan,
+          isPrimary: true,
+        ),
       ),
     );
   }
