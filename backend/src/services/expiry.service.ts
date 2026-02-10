@@ -1,53 +1,39 @@
 import cron from 'node-cron';
-import FoodItem, { FoodStatus } from '../models/foodItem.model';
+import FoodItem from '../models/foodItem.model';
 import logger from '../utils/logger';
 
 /**
- * Check and update food item statuses based on expiry dates
- * Runs daily to keep statuses up to date
+ * Check and log food item expiry information
+ * This service is kept for future expiry-related features
  */
-export const updateFoodItemStatuses = async (): Promise<void> => {
+export const checkFoodItemExpiry = async (): Promise<void> => {
   try {
     const now = new Date();
 
-    logger.info('Running food expiry status update job...');
+    logger.info('Running food expiry check...');
 
     // Get all food items
     const foodItems = await FoodItem.find({});
-    let updatedCount = 0;
+    let expiringCount = 0;
+    let expiredCount = 0;
 
-    // Update each item based on expiry date
+    // Count expiring and expired items
     for (const item of foodItems) {
       const timeDiff = item.expiryDate.getTime() - now.getTime();
       const daysDiff = timeDiff / (1000 * 60 * 60 * 24);
 
-      let newStatus = item.status;
-
-      // Determine new status based on days until expiry
       if (daysDiff < 0) {
-        // Past expiry date
-        newStatus = FoodStatus.EXPIRED;
+        expiredCount++;
       } else if (daysDiff <= 2) {
-        // Expiring within 2 days
-        newStatus = FoodStatus.EXPIRING;
-      } else {
-        // More than 2 days until expiry
-        newStatus = FoodStatus.FRESH;
-      }
-
-      // Update if status has changed
-      if (newStatus !== item.status) {
-        item.status = newStatus;
-        await item.save();
-        updatedCount++;
+        expiringCount++;
       }
     }
 
     logger.info(
-      `Food expiry status update completed. Updated ${updatedCount} out of ${foodItems.length} items.`
+      `Food expiry check completed. Total items: ${foodItems.length}, Expiring soon: ${expiringCount}, Expired: ${expiredCount}`
     );
   } catch (error) {
-    logger.error('Error updating food item statuses:', error);
+    logger.error('Error checking food item expiry:', error);
   }
 };
 
@@ -58,7 +44,7 @@ export const startExpiryCheckCron = (): void => {
   // Run daily at midnight (00:00)
   cron.schedule('0 0 * * *', async () => {
     logger.info('Starting scheduled food expiry check...');
-    await updateFoodItemStatuses();
+    await checkFoodItemExpiry();
   });
 
   logger.info('✅ Food expiry check cron job scheduled (runs daily at midnight)');
@@ -69,5 +55,5 @@ export const startExpiryCheckCron = (): void => {
  */
 export const runExpiryCheckNow = async (): Promise<void> => {
   logger.info('Running food expiry check manually...');
-  await updateFoodItemStatuses();
+  await checkFoodItemExpiry();
 };

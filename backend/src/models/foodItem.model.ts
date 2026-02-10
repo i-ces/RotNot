@@ -1,13 +1,5 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export enum FoodStatus {
-  FRESH = 'fresh',
-  EXPIRING = 'expiring',
-  EXPIRED = 'expired',
-  DONATED = 'donated',
-  CONSUMED = 'consumed',
-}
-
 export interface IFoodItem extends Document {
   name: string;
   category: string;
@@ -15,7 +7,6 @@ export interface IFoodItem extends Document {
   unit: string;
   addedAt: Date;
   expiryDate: Date;
-  status: FoodStatus;
   ownerId: string;
 }
 
@@ -49,11 +40,6 @@ const foodItemSchema = new Schema<IFoodItem>(
       type: Date,
       required: [true, 'Expiry date is required'],
     },
-    status: {
-      type: String,
-      enum: Object.values(FoodStatus),
-      default: FoodStatus.FRESH,
-    },
     ownerId: {
       type: String,
       required: [true, 'Owner ID is required'],
@@ -67,7 +53,6 @@ const foodItemSchema = new Schema<IFoodItem>(
 
 // Index for faster lookups
 foodItemSchema.index({ ownerId: 1 });
-foodItemSchema.index({ status: 1 });
 foodItemSchema.index({ expiryDate: 1 });
 
 const FoodItem = mongoose.model<IFoodItem>('FoodItem', foodItemSchema);

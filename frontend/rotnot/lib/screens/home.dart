@@ -111,7 +111,6 @@ class _HomeState extends State<Home> {
   }
 
   void _calculateDonationStats() {
-    _totalDonations = _donations.length;
     _acceptedDonations = 0;
     _pendingDonations = 0;
     _totalItemsDonated = 0;
@@ -129,6 +128,9 @@ class _HomeState extends State<Home> {
         _totalItemsDonated += foodItems.length;
       }
     }
+
+    // Total donations excludes pending ones
+    _totalDonations = _donations.length - _pendingDonations;
   }
 
   Future<void> _loadChampion() async {
