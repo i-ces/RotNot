@@ -2257,7 +2257,7 @@ class _DonationScreenState extends State<DonationScreen> {
                 '${items.length} items selected',
               ),
               const SizedBox(height: 10),
-              _confirmRow(Icons.access_time_rounded, 'Pickup within 2 hours'),
+              _confirmRow(Icons.access_time_rounded, 'Response within 2 hours'),
               const SizedBox(height: 16),
               Container(
                 width: double.infinity,

@@ -118,7 +118,7 @@ class _HomeState extends State<Home> {
 
     for (var donation in _donations) {
       final status = donation['status']?.toString().toLowerCase();
-      if (status == 'accepted' || status == 'completed' || status == 'picked_up') {
+      if (status == 'accepted' || status == 'completed' || status == 'Re') {
         _acceptedDonations++;
       } else if (status == 'pending') {
         _pendingDonations++;
