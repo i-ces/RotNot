@@ -5,6 +5,7 @@ import 'package:rotnot/services/api_service.dart';
 import 'package:rotnot/screens/leaderboard.dart';
 import 'package:rotnot/screens/smartrecipe.dart';
 import 'package:rotnot/screens/expiring_items.dart';
+import 'package:rotnot/utils/impact_calculator.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -28,9 +29,10 @@ class _HomeState extends State<Home> {
   int _expiringSoon = 0;
   int _expired = 0;
 
-  // Savings impact calculations
+  // Savings impact calculations (Nepal-specific metrics)
   double _moneySaved = 0.0;
   double _co2Avoided = 0.0;
+  double _totalDonatedWeightKg = 0.0;
 
   // Donation contributions
   List<dynamic> _donations = [];
@@ -91,11 +93,7 @@ class _HomeState extends State<Home> {
         }
       }
     }
-
-    const double avgItemCost = 150.0;
-    final itemsConsumed = _totalItems - _expired;
-    _moneySaved = itemsConsumed * avgItemCost;
-    _co2Avoided = itemsConsumed * 0.5;
+    // Savings impact is computed from donations in _calculateDonationStats()
   }
 
   Future<void> _loadDonations() async {
@@ -111,13 +109,16 @@ class _HomeState extends State<Home> {
   }
 
   void _calculateDonationStats() {
+    _totalDonations = _donations.length;
     _acceptedDonations = 0;
     _pendingDonations = 0;
     _totalItemsDonated = 0;
 
+    final List<Map<String, dynamic>> donatedItems = [];
+
     for (var donation in _donations) {
       final status = donation['status']?.toString().toLowerCase();
-      if (status == 'accepted') {
+      if (status == 'accepted' || status == 'completed' || status == 'picked_up') {
         _acceptedDonations++;
       } else if (status == 'pending') {
         _pendingDonations++;
@@ -126,11 +127,23 @@ class _HomeState extends State<Home> {
       final foodItems = donation['foodItems'] as List?;
       if (foodItems != null) {
         _totalItemsDonated += foodItems.length;
+
+        if (status == 'accepted' || status == 'completed' || status == 'picked_up') {
+          for (var fi in foodItems) {
+            donatedItems.add({
+              'quantity': fi['quantity'] ?? 1,
+              'unit': fi['unit'] ?? 'pcs',
+              'category': fi['category'],
+            });
+          }
+        }
       }
     }
 
-    // Total donations excludes pending ones
-    _totalDonations = _donations.length - _pendingDonations;
+    final impact = ImpactCalculator.calculateFromDonations(donatedItems);
+    _moneySaved = impact.moneySavedNPR;
+    _co2Avoided = impact.co2AvoidedKg;
+    _totalDonatedWeightKg = impact.totalWeightKg;
   }
 
   Future<void> _loadChampion() async {
@@ -267,6 +280,25 @@ class _HomeState extends State<Home> {
               ),
             ),
     );
+  }
+
+  // --- HELPERS ---
+
+  String _formatNumber(double value) {
+    if (value >= 100000) {
+      return '${(value / 1000).toStringAsFixed(1)}K';
+    }
+    final intVal = value.round();
+    final str = intVal.toString();
+    if (str.length <= 3) return str;
+    final last3 = str.substring(str.length - 3);
+    final rest = str.substring(0, str.length - 3);
+    final buffer = StringBuffer();
+    for (int i = 0; i < rest.length; i++) {
+      if (i > 0 && (rest.length - i) % 2 == 0) buffer.write(',');
+      buffer.write(rest[i]);
+    }
+    return '$buffer,$last3';
   }
 
   // --- WIDGET BUILDERS ---
@@ -535,15 +567,15 @@ class _HomeState extends State<Home> {
             children: [
               _buildImpactStat(
                 "MONEY SAVED",
-                "रू ${_moneySaved.toStringAsFixed(0)}",
-                "By reducing waste",
+                "रू ${_formatNumber(_moneySaved)}",
+                "From ${_totalDonatedWeightKg.toStringAsFixed(1)} kg donated",
                 accentGreen,
               ),
               const SizedBox(width: 15),
               _buildImpactStat(
-                "CO2 AVOIDED",
+                "CO₂ AVOIDED",
                 "${_co2Avoided.toStringAsFixed(1)} kg",
-                "Carbon footprint",
+                "2.5 kg CO₂e per kg saved",
                 const Color(0xFF64FFDA),
               ),
             ],
