@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:rotnot/services/auth_service.dart';
-import 'package:rotnot/services/api_service.dart';
-import 'package:rotnot/screens/mycontributions.dart';
-import 'package:rotnot/screens/settings.dart';
+import 'package:RotNot/services/auth_service.dart';
+import 'package:RotNot/screens/settings.dart';
+import 'package:RotNot/services/api_service.dart';
+import 'package:RotNot/screens/mycontributions.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});

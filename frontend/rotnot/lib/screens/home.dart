@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import 'package:rotnot/services/auth_service.dart';
-import 'package:rotnot/services/api_service.dart';
-import 'package:rotnot/screens/leaderboard.dart';
-import 'package:rotnot/screens/smartrecipe.dart';
-import 'package:rotnot/screens/expiring_items.dart';
-import 'package:rotnot/utils/impact_calculator.dart';
+import 'package:RotNot/services/auth_service.dart';
+import 'package:RotNot/services/api_service.dart';
+import 'package:RotNot/screens/leaderboard.dart';
+import 'package:RotNot/screens/smartrecipe.dart';
+import 'package:RotNot/screens/expiring_items.dart';
+import 'package:RotNot/utils/impact_calculator.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});

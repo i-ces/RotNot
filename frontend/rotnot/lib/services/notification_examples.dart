@@ -3,7 +3,7 @@
 /// This demonstrates how to schedule and cancel expiry notifications
 /// for food items in your shelf/inventory.
 
-import 'package:rotnot/services/notification_service.dart';
+import 'package:RotNot/services/notification_service.dart';
 
 // Example food item model (adjust based on your actual model)
 class FoodItem {
