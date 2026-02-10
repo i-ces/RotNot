@@ -14,6 +14,10 @@ class FoodItem {
   final int quantity;
   final String unit;
   final String? notes;
+  final String category;
+  final String? donationId; // For tracking donations in food bank view
+  final String?
+  itemStatus; // Backend status: fresh, expiring, expired, donated, consumed
 
   FoodItem({
     required this.id,
@@ -23,7 +27,12 @@ class FoodItem {
     required this.quantity,
     this.unit = 'pcs',
     this.notes,
+    this.category = 'General',
+    this.donationId,
+    this.itemStatus,
   });
+
+  bool get isDonated => itemStatus?.toLowerCase() == 'donated';
 
   FoodStatus get status {
     final now = DateTime.now();
@@ -90,7 +99,7 @@ class _ShelfScreenState extends State<ShelfScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _loadFoodItems();
 
     // Listen to focus changes to hide/show FAB in main.dart
@@ -121,6 +130,8 @@ class _ShelfScreenState extends State<ShelfScreen>
             quantity: item['quantity'] ?? 1,
             unit: item['unit'] ?? 'pcs',
             notes: item['notes'],
+            category: item['category'] ?? 'General',
+            itemStatus: item['status'],
           );
         }).toList();
         _isLoading = false;
@@ -150,24 +161,32 @@ class _ShelfScreenState extends State<ShelfScreen>
     return list.where((i) => i.name.toLowerCase().contains(q)).toList();
   }
 
-  List<FoodItem> get _allItems => _applySearch(_items);
-  List<FoodItem> get _freshItems =>
-      _applySearch(_items.where((i) => i.status == FoodStatus.fresh).toList());
+  // Filter out donated items from regular tabs
+  List<FoodItem> get _nonDonatedItems =>
+      _items.where((i) => !i.isDonated).toList();
+
+  List<FoodItem> get _allItems => _applySearch(_nonDonatedItems);
+  List<FoodItem> get _freshItems => _applySearch(
+    _nonDonatedItems.where((i) => i.status == FoodStatus.fresh).toList(),
+  );
   List<FoodItem> get _expiringItems => _applySearch(
-    _items.where((i) => i.status == FoodStatus.expiring).toList(),
+    _nonDonatedItems.where((i) => i.status == FoodStatus.expiring).toList(),
   );
   List<FoodItem> get _expiredItems => _applySearch(
-    _items.where((i) => i.status == FoodStatus.expired).toList(),
+    _nonDonatedItems.where((i) => i.status == FoodStatus.expired).toList(),
   );
+  List<FoodItem> get _donatedItems =>
+      _applySearch(_items.where((i) => i.isDonated).toList());
 
   // Summary counts ────────────────────────────────────────────────────────────
 
   int get _freshCount =>
-      _items.where((i) => i.status == FoodStatus.fresh).length;
+      _nonDonatedItems.where((i) => i.status == FoodStatus.fresh).length;
   int get _expiringCount =>
-      _items.where((i) => i.status == FoodStatus.expiring).length;
+      _nonDonatedItems.where((i) => i.status == FoodStatus.expiring).length;
   int get _expiredCount =>
-      _items.where((i) => i.status == FoodStatus.expired).length;
+      _nonDonatedItems.where((i) => i.status == FoodStatus.expired).length;
+  int get _donatedCount => _items.where((i) => i.isDonated).length;
 
   // ──────────────────────────────────────────────────────────────────────────
 
@@ -177,9 +196,7 @@ class _ShelfScreenState extends State<ShelfScreen>
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: MyApp.surfaceColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [
             Icon(Icons.delete_outline_rounded, color: Colors.red, size: 24),
@@ -196,10 +213,7 @@ class _ShelfScreenState extends State<ShelfScreen>
         ),
         content: Text(
           'This item will be permanently removed from your shelf.',
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.7),
-            fontSize: 14,
-          ),
+          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
         ),
         actions: [
           TextButton(
@@ -354,108 +368,110 @@ class _ShelfScreenState extends State<ShelfScreen>
         }
       },
       child: Column(
-      children: [
-        // ── Search bar (With SafeArea and increased padding) ──
-        SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 32, 16, 4),
-            child: TextField(
-              controller: _searchController,
-              focusNode: _searchFocusNode,
-              onChanged: (v) => setState(() => _searchQuery = v),
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Search items…',
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
-                prefixIcon: Icon(
-                  Icons.search_rounded,
-                  color: Colors.white.withOpacity(0.4),
-                ),
-                filled: true,
-                fillColor: MyApp.surfaceColor,
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ),
-        ),
-
-        // ── Tab bar ──
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: MyApp.surfaceColor,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: TabBar(
-            controller: _tabController,
-            isScrollable: false,
-            labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-            indicator: BoxDecoration(
-              color: MyApp.accentGreen.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            indicatorSize: TabBarIndicatorSize.tab,
-            dividerColor: Colors.transparent,
-            labelColor: MyApp.accentGreen,
-            unselectedLabelColor: Colors.white54,
-            labelStyle: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-            tabs: [
-              _buildTab('All', _items.length),
-              _buildTab('Fresh', _freshCount),
-              _buildTab('Expiring', _expiringCount),
-              _buildTab('Expired', _expiredCount),
-            ],
-          ),
-        ),
-
-        // ── Item lists ──
-        Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              _buildItemList(_allItems),
-              _buildItemList(_freshItems),
-              _buildItemList(_expiringItems),
-              _buildItemList(_expiredItems),
-            ],
-          ),
-        ),
-
-        // ── Add button (Hide if searching to keep UI clean) ──
-        if (!_searchFocusNode.hasFocus)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-            child: SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: () => _showAddItemSheet(context),
-                icon: const Icon(Icons.add_rounded, size: 22),
-                label: const Text(
-                  'Add Item',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: MyApp.accentGreen,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+        children: [
+          // ── Search bar (With SafeArea and increased padding) ──
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 32, 16, 4),
+              child: TextField(
+                controller: _searchController,
+                focusNode: _searchFocusNode,
+                onChanged: (v) => setState(() => _searchQuery = v),
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: 'Search items…',
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                  prefixIcon: Icon(
+                    Icons.search_rounded,
+                    color: Colors.white.withOpacity(0.4),
                   ),
-                  elevation: 0,
+                  filled: true,
+                  fillColor: MyApp.surfaceColor,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
             ),
           ),
-      ],
-    ),
+
+          // ── Tab bar ──
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: MyApp.surfaceColor,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: false,
+              labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+              indicator: BoxDecoration(
+                color: MyApp.accentGreen.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: Colors.transparent,
+              labelColor: MyApp.accentGreen,
+              unselectedLabelColor: Colors.white54,
+              labelStyle: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+              tabs: [
+                _buildTab('All', _nonDonatedItems.length),
+                _buildTab('Fresh', _freshCount),
+                _buildTab('Expiring', _expiringCount),
+                _buildTab('Expired', _expiredCount),
+                _buildTab('Donated', _donatedCount),
+              ],
+            ),
+          ),
+
+          // ── Item lists ──
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildItemList(_allItems),
+                _buildItemList(_freshItems),
+                _buildItemList(_expiringItems),
+                _buildItemList(_expiredItems),
+                _buildItemList(_donatedItems),
+              ],
+            ),
+          ),
+
+          // ── Add button (Hide if searching to keep UI clean) ──
+          if (!_searchFocusNode.hasFocus)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+              child: SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: () => _showAddItemSheet(context),
+                  icon: const Icon(Icons.add_rounded, size: 22),
+                  label: const Text(
+                    'Add Item',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: MyApp.accentGreen,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -587,7 +603,10 @@ class _ShelfScreenState extends State<ShelfScreen>
               ),
               child: SingleChildScrollView(
                 padding: EdgeInsets.fromLTRB(
-                  24, 16, 24, 24 + MediaQuery.of(context).padding.bottom,
+                  24,
+                  16,
+                  24,
+                  24 + MediaQuery.of(context).padding.bottom,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -718,6 +737,7 @@ class _ShelfScreenState extends State<ShelfScreen>
                             notes: notesCtrl.text.trim().isEmpty
                                 ? null
                                 : notesCtrl.text.trim(),
+                            category: 'General', // Default category
                           );
                           _addItem(newItem);
                           Navigator.pop(context);

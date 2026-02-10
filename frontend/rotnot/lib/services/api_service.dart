@@ -134,11 +134,13 @@ class ApiService {
     String? name,
     String? email,
     String? phone,
+    String? foodBankId,
   }) async {
     final body = <String, dynamic>{'role': role};
     if (name != null) body['name'] = name;
     if (email != null) body['email'] = email;
     if (phone != null) body['phone'] = phone;
+    if (foodBankId != null) body['foodBankId'] = foodBankId;
 
     // Try to update first (PUT), if fails try create (POST)
     try {
@@ -274,6 +276,70 @@ class ApiService {
       return data['data']['foodBanks'] as List<dynamic>;
     } else {
       throw Exception('Failed to get food banks: ${response.statusCode}');
+    }
+  }
+
+  // ─── Donation Actions (Food Bank) ────────────────────────────────────────────
+
+  /// Get pending donations (for food banks)
+  /// GET /api/donations/pending
+  static Future<List<dynamic>> getPendingDonations() async {
+    final response = await get('/donations/pending');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['data']['donations'] as List<dynamic>;
+    } else {
+      throw Exception(
+        'Failed to get pending donations: ${response.statusCode}',
+      );
+    }
+  }
+
+  /// Accept a donation (food bank)
+  /// POST /api/donations/:id/accept
+  static Future<Map<String, dynamic>> acceptDonation(String donationId) async {
+    final response = await post('/donations/$donationId/accept');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['data']['donation'] as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to accept donation: ${response.statusCode}');
+    }
+  }
+
+  /// Decline a donation (food bank)
+  /// POST /api/donations/:id/decline
+  static Future<Map<String, dynamic>> declineDonation(String donationId) async {
+    final response = await post('/donations/$donationId/decline');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['data']['donation'] as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to decline donation: ${response.statusCode}');
+    }
+  }
+
+  /// Dismiss a donation (donor)
+  /// POST /api/donations/:id/dismiss
+  static Future<Map<String, dynamic>> dismissDonation(String donationId) async {
+    final response = await post('/donations/$donationId/dismiss');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['data']['donation'] as Map<String, dynamic>;
+    } else {
+      throw Exception('Failed to dismiss donation: ${response.statusCode}');
+    }
+  }
+
+  /// Get leaderboard
+  /// GET /api/donations/leaderboard
+  static Future<List<dynamic>> getLeaderboard() async {
+    final response = await get('/donations/leaderboard');
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['data']['leaderboard'] as List<dynamic>;
+    } else {
+      throw Exception('Failed to get leaderboard: ${response.statusCode}');
     }
   }
 }

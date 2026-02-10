@@ -10,16 +10,17 @@ const router = Router();
 
 /**
  * Food Bank Routes
- * All routes require Firebase authentication
+ * Public routes for viewing food banks
+ * Authentication required only for creating food banks
  */
 
-// Get nearby food banks based on location
-router.get('/nearby', verifyFirebaseToken, getNearbyFoodBanks);
+// Get nearby food banks based on location (public)
+router.get('/nearby', getNearbyFoodBanks);
 
-// Get all food banks
-router.get('/', verifyFirebaseToken, getAllFoodBanks);
+// Get all food banks (public - needed for signup)
+router.get('/', getAllFoodBanks);
 
-// Create a new food bank
+// Create a new food bank (protected)
 router.post('/', verifyFirebaseToken, createFoodBank);
 
 export default router;
