@@ -457,14 +457,6 @@ class _FoodDetectionScreenState extends State<FoodDetectionScreen> {
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: [
-          if (_capturedImage != null)
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _resetScan,
-              tooltip: 'New Scan',
-            ),
-        ],
       ),
       body: Column(
         children: [
@@ -496,7 +488,7 @@ class _FoodDetectionScreenState extends State<FoodDetectionScreen> {
             ),
           ),
 
-          // --- DETECTION RESULTS (JSON Output) ---
+          // --- DETECTION RESULTS ---
           if (_detectionResult != null) _buildResultsSection(),
 
           // --- CAPTURE CONTROLS ---
@@ -939,27 +931,13 @@ class _FoodDetectionScreenState extends State<FoodDetectionScreen> {
   Widget _buildRetakeControls() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildActionButton(
-            icon: Icons.refresh,
-            label: "Retake",
-            onTap: _resetScan,
-          ),
-          _buildActionButton(
-            icon: Icons.camera_alt,
-            label: "Scan Again",
-            onTap: () {
-              _resetScan();
-              Future.delayed(
-                const Duration(milliseconds: 100),
-                _captureAndDetect,
-              );
-            },
-            isPrimary: true,
-          ),
-        ],
+      child: Center(
+        child: _buildActionButton(
+          icon: Icons.refresh,
+          label: "Retake",
+          onTap: _resetScan,
+          isPrimary: true,
+        ),
       ),
     );
   }
