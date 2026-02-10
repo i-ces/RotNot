@@ -1841,6 +1841,8 @@ class _DonationScreenState extends State<DonationScreen> {
     }
 
     final selected = <String>{};
+    final notesController = TextEditingController();
+    bool isExpanded = false;
 
     showModalBottomSheet(
       context: context,
@@ -1940,156 +1942,280 @@ class _DonationScreenState extends State<DonationScreen> {
 
                   // Item list
                   Flexible(
-                    child: _foodItems.isEmpty
-                        ? Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(32.0),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.inbox_outlined,
-                                    size: 48,
-                                    color: Colors.white.withOpacity(0.3),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'No items available for donation',
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.5),
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Add items to your shelf first',
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.3),
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        : ListView.builder(
-                            shrinkWrap: true,
-                            physics: const BouncingScrollPhysics(),
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            itemCount: _foodItems.length,
-                            addAutomaticKeepAlives: false,
-                            addRepaintBoundaries: true,
-                            itemBuilder: (context, index) {
-                              final item = _foodItems[index];
-                              final isChecked = selected.contains(item.id);
-
-                              return Container(
-                                margin: const EdgeInsets.only(bottom: 10),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 14,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: MyApp.scaffoldBg,
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: isChecked
-                                        ? MyApp.accentGreen.withOpacity(0.4)
-                                        : Colors.white10,
-                                  ),
-                                ),
-                                child: Row(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        children: [
+                          if (_foodItems.isEmpty)
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(32.0),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    // Checkbox
-                                    GestureDetector(
-                                      onTap: () {
-                                        setSheetState(() {
-                                          if (isChecked) {
-                                            selected.remove(item.id);
-                                          } else {
-                                            selected.add(item.id);
-                                          }
-                                        });
-                                      },
-                                      child: Container(
-                                        width: 26,
-                                        height: 26,
-                                        decoration: BoxDecoration(
-                                          color: isChecked
-                                              ? MyApp.accentGreen
-                                              : Colors.transparent,
-                                          borderRadius: BorderRadius.circular(
-                                            7,
-                                          ),
-                                          border: Border.all(
-                                            color: isChecked
-                                                ? MyApp.accentGreen
-                                                : Colors.white30,
-                                            width: 2,
-                                          ),
-                                        ),
-                                        child: isChecked
-                                            ? const Icon(
-                                                Icons.check_rounded,
-                                                size: 18,
-                                                color: Colors.white,
-                                              )
-                                            : null,
+                                    Icon(
+                                      Icons.inbox_outlined,
+                                      size: 48,
+                                      color: Colors.white.withOpacity(0.3),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No items available for donation',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.5),
+                                        fontSize: 14,
                                       ),
                                     ),
-                                    const SizedBox(width: 14),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Add items to your shelf first',
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.3),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          else
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
+                              child: Column(
+                                children: [
+                                  ...(isExpanded
+                                          ? _foodItems
+                                          : _foodItems.take(3).toList())
+                                      .asMap()
+                                      .entries
+                                      .map((entry) {
+                                        final item = entry.value;
+                                        final isChecked = selected.contains(
+                                          item.id,
+                                        );
 
-                                    // Item details
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            item.name,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
+                                        return Container(
+                                          margin: const EdgeInsets.only(
+                                            bottom: 10,
+                                          ),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 14,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: MyApp.scaffoldBg,
+                                            borderRadius: BorderRadius.circular(
+                                              14,
+                                            ),
+                                            border: Border.all(
+                                              color: isChecked
+                                                  ? MyApp.accentGreen
+                                                        .withOpacity(0.4)
+                                                  : Colors.white10,
                                             ),
                                           ),
-                                          const SizedBox(height: 3),
-                                          Row(
+                                          child: Row(
                                             children: [
-                                              Icon(
-                                                Icons.schedule_rounded,
-                                                size: 13,
-                                                color: item.statusColor,
+                                              // Checkbox
+                                              GestureDetector(
+                                                onTap: () {
+                                                  setSheetState(() {
+                                                    if (isChecked) {
+                                                      selected.remove(item.id);
+                                                    } else {
+                                                      selected.add(item.id);
+                                                    }
+                                                  });
+                                                },
+                                                child: Container(
+                                                  width: 26,
+                                                  height: 26,
+                                                  decoration: BoxDecoration(
+                                                    color: isChecked
+                                                        ? MyApp.accentGreen
+                                                        : Colors.transparent,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          7,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: isChecked
+                                                          ? MyApp.accentGreen
+                                                          : Colors.white30,
+                                                      width: 2,
+                                                    ),
+                                                  ),
+                                                  child: isChecked
+                                                      ? const Icon(
+                                                          Icons.check_rounded,
+                                                          size: 18,
+                                                          color: Colors.white,
+                                                        )
+                                                      : null,
+                                                ),
                                               ),
-                                              const SizedBox(width: 4),
+                                              const SizedBox(width: 14),
+
+                                              // Item details
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      item.name,
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 14,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 3),
+                                                    Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons
+                                                              .schedule_rounded,
+                                                          size: 13,
+                                                          color:
+                                                              item.statusColor,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 4,
+                                                        ),
+                                                        Text(
+                                                          item.daysLeftLabel,
+                                                          style: TextStyle(
+                                                            color: item
+                                                                .statusColor,
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+
+                                              // Quantity
                                               Text(
-                                                item.daysLeftLabel,
+                                                '${item.quantity}${item.unit}',
                                                 style: TextStyle(
-                                                  color: item.statusColor,
-                                                  fontSize: 12,
+                                                  color: Colors.white
+                                                      .withOpacity(0.45),
+                                                  fontSize: 13,
                                                   fontWeight: FontWeight.w500,
                                                 ),
                                               ),
                                             ],
                                           ),
-                                        ],
+                                        );
+                                      })
+                                      .toList(),
+                                  if (_foodItems.length > 3)
+                                    TextButton.icon(
+                                      onPressed: () {
+                                        setSheetState(() {
+                                          isExpanded = !isExpanded;
+                                        });
+                                      },
+                                      icon: Icon(
+                                        isExpanded
+                                            ? Icons.keyboard_arrow_up_rounded
+                                            : Icons.keyboard_arrow_down_rounded,
+                                        color: MyApp.accentGreen,
+                                      ),
+                                      label: Text(
+                                        isExpanded
+                                            ? 'Show less'
+                                            : 'Show ${_foodItems.length - 3} more items',
+                                        style: const TextStyle(
+                                          color: MyApp.accentGreen,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ),
+                                ],
+                              ),
+                            ),
 
-                                    // Quantity
+                          // Description section
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
                                     Text(
-                                      '${item.quantity}${item.unit}',
+                                      'Description of Food',
                                       style: TextStyle(
-                                        color: Colors.white.withOpacity(0.45),
+                                        color: Colors.white.withOpacity(0.7),
                                         fontSize: 13,
-                                        fontWeight: FontWeight.w500,
+                                        fontWeight: FontWeight.w600,
                                       ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Icon(
+                                      Icons.info_outline,
+                                      size: 14,
+                                      color: Colors.white.withOpacity(0.4),
                                     ),
                                   ],
                                 ),
-                              );
-                            },
+                                const SizedBox(height: 8),
+                                TextField(
+                                  controller: notesController,
+                                  maxLines: 3,
+                                  style: const TextStyle(color: Colors.white),
+                                  onChanged: (value) {
+                                    setSheetState(
+                                      () {},
+                                    ); // Refresh UI when text changes
+                                  },
+                                  decoration: InputDecoration(
+                                    hintText:
+                                        'Describe food items you want to donate...',
+                                    hintStyle: TextStyle(
+                                      color: Colors.white.withOpacity(0.3),
+                                      fontSize: 13,
+                                    ),
+                                    filled: true,
+                                    fillColor: MyApp.scaffoldBg,
+                                    contentPadding: const EdgeInsets.all(14),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: Colors.white.withOpacity(0.1),
+                                      ),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: Colors.white.withOpacity(0.1),
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: MyApp.accentGreen.withOpacity(
+                                          0.5,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                        ],
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 8),
 
@@ -2100,24 +2226,30 @@ class _DonationScreenState extends State<DonationScreen> {
                       width: double.infinity,
                       height: 52,
                       child: ElevatedButton.icon(
-                        onPressed: selected.isEmpty
-                            ? null
-                            : () {
-                                Navigator.pop(context);
-                                _submitDonation(
-                                  bank,
-                                  _foodItems
-                                      .where((i) => selected.contains(i.id))
-                                      .toList(),
-                                );
-                              },
+                        onPressed: () {
+                          final description = notesController.text.trim();
+                          if (selected.isEmpty && description.isEmpty) {
+                            return;
+                          }
+                          Navigator.pop(context);
+                          _submitDonation(
+                            bank,
+                            _foodItems
+                                .where((i) => selected.contains(i.id))
+                                .toList(),
+                            description: description,
+                          );
+                        },
                         icon: const Icon(
                           Icons.local_shipping_rounded,
                           size: 20,
                         ),
                         label: Text(
-                          selected.isEmpty
-                              ? 'Select items to donate'
+                          (selected.isEmpty &&
+                                  notesController.text.trim().isEmpty)
+                              ? 'Send request'
+                              : selected.isEmpty
+                              ? 'Send request with description'
                               : 'Send request (${selected.length} items)',
                           style: const TextStyle(
                             fontSize: 15,
@@ -2125,11 +2257,16 @@ class _DonationScreenState extends State<DonationScreen> {
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: MyApp.accentGreen,
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor: MyApp.accentGreen
-                              .withOpacity(0.3),
-                          disabledForegroundColor: Colors.white38,
+                          backgroundColor:
+                              (selected.isEmpty &&
+                                  notesController.text.trim().isEmpty)
+                              ? MyApp.accentGreen.withOpacity(0.3)
+                              : MyApp.accentGreen,
+                          foregroundColor:
+                              (selected.isEmpty &&
+                                  notesController.text.trim().isEmpty)
+                              ? Colors.white38
+                              : Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
@@ -2143,7 +2280,7 @@ class _DonationScreenState extends State<DonationScreen> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 20),
                     child: Text(
-                      "We'll notify a volunteer to collect your donation",
+                      "The food bank will receive your items and description",
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.3),
                         fontSize: 12,
@@ -2161,7 +2298,11 @@ class _DonationScreenState extends State<DonationScreen> {
 
   // ─── Submit donation ──────────────────────────────────────────────────────
 
-  Future<void> _submitDonation(FoodBank bank, List<FoodItem> items) async {
+  Future<void> _submitDonation(
+    FoodBank bank,
+    List<FoodItem> items, {
+    String? description,
+  }) async {
     // Show loading dialog
     showDialog(
       context: context,
@@ -2183,14 +2324,15 @@ class _DonationScreenState extends State<DonationScreen> {
               },
             )
             .toList(),
-        'notes': 'Scheduled via RotNot app',
+        'notes': description ?? 'Donation request via RotNot app',
+        'description': description ?? '',
       };
 
       await ApiService.createDonation(donationData);
 
       if (mounted) {
         Navigator.pop(context); // Close loading dialog
-        _showPickupConfirmation(bank, items);
+        _showPickupConfirmation(bank, items, description: description);
 
         // Reload food items to update the list
         _loadFoodItems();
@@ -2210,7 +2352,11 @@ class _DonationScreenState extends State<DonationScreen> {
 
   // ─── Pickup confirmation dialog ───────────────────────────────────────────
 
-  void _showPickupConfirmation(FoodBank bank, List<FoodItem> items) {
+  void _showPickupConfirmation(
+    FoodBank bank,
+    List<FoodItem> items, {
+    String? description,
+  }) {
     showDialog(
       context: context,
       builder: (context) {
@@ -2252,11 +2398,17 @@ class _DonationScreenState extends State<DonationScreen> {
             children: [
               _confirmRow(Icons.location_on_rounded, bank.name),
               const SizedBox(height: 10),
-              _confirmRow(
-                Icons.inventory_2_outlined,
-                '${items.length} items selected',
-              ),
-              const SizedBox(height: 10),
+              if (items.isNotEmpty) ...[
+                _confirmRow(
+                  Icons.inventory_2_outlined,
+                  '${items.length} ${items.length == 1 ? 'item' : 'items'} from shelf',
+                ),
+                const SizedBox(height: 10),
+              ],
+              if (description != null && description.isNotEmpty) ...[
+                _confirmRow(Icons.description_outlined, 'Description provided'),
+                const SizedBox(height: 10),
+              ],
               _confirmRow(Icons.access_time_rounded, 'Pickup within 2 hours'),
               const SizedBox(height: 16),
               Container(
